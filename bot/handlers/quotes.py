@@ -110,13 +110,24 @@ async def quote_time_command(
         j.schedule_removal()
 
     hour, minute = map(int, arg.split(":"))
+    target_time = dt.time(hour=hour, minute=minute)
 
     context.job_queue.run_daily(
         send_daily_quote_job,
-        time=dt.time(hour=hour, minute=minute),
+        time=target_time,
         data={"chat_id": chat_id},
         name=job_name,
     )
+
+    # Если время уже прошло сегодня — первая цитата через 5 секунд
+    now = datetime.now()
+    if now.time() >= target_time:
+        context.job_queue.run_once(
+            send_daily_quote_job,
+            when=5,
+            data={"chat_id": chat_id},
+            name=f"{job_name}_immediate",
+        )
 
     await update.message.reply_text(
         f"✅ Ежедневная цитата установлена на <b>{arg}</b>.\n"
@@ -139,9 +150,6 @@ async def send_daily_quote_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     if not chat_id:
         return
 
-    # Проверяем, что у пользователя включены ежедневные цитаты
-    # user_data недоступна напрямую из job callback — chat_data используется
-    # Отправляем цитату, а фильтрацию по quote_time делает тот, кто создаёт job
     quote = choice(QUOTES_POOL)
     await context.bot.send_message(
         chat_id=chat_id,

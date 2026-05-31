@@ -55,11 +55,14 @@ cd KeshaFinanceBot
 ```bash
 cd bot
 python3 -m venv venv
-source venv/bin/activate  # или venv\Scripts\activate на Windows
+source venv/bin/activate  # АКТИВИРОВАТЬ ОБЯЗАТЕЛЬНО! (Windows: venv\Scripts\activate)
 pip install -r requirements.txt
-cp .env.example .env  # заполни .env своими токенами
+cp .env.example .env        # заполни .env своими токенами
 python3 main.py
 ```
+
+> ⚠️ **Важно:** каждый раз перед запуском нужно активировать venv: `source venv/bin/activate`.
+> Без этого будет ошибка `TypeError: unsupported operand type(s) for |`.
 
 ### Веб-приложение (уже задеплоено)
 Открой [keshafinancebot.vercel.app](https://keshafinancebot.vercel.app) — готово.

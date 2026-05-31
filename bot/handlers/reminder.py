@@ -82,13 +82,24 @@ async def reminder_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         j.schedule_removal()
 
     hour, minute = map(int, arg.split(":"))
+    target_time = dt.time(hour=hour, minute=minute)
 
     context.job_queue.run_daily(
         send_daily_reminder_job,
-        time=dt.time(hour=hour, minute=minute),
+        time=target_time,
         data={"chat_id": chat_id},
         name=job_name,
     )
+
+    # Если время уже прошло сегодня — первое напоминание через 5 секунд
+    now = datetime.now()
+    if now.time() >= target_time:
+        context.job_queue.run_once(
+            send_daily_reminder_job,
+            when=5,
+            data={"chat_id": chat_id},
+            name=f"{job_name}_immediate",
+        )
 
     await update.message.reply_text(
         f"✅ Ежедневное напоминание установлено на <b>{arg}</b>.\n"
