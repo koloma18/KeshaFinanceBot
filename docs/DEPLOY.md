@@ -1,5 +1,9 @@
 # Деплой на Vercel
 
+> 🌐 **Текущий деплой:** [keshafinancebot.vercel.app](https://keshafinancebot.vercel.app)
+>
+> Репозиторий: [github.com/koloma18/KeshaFinanceBot](https://github.com/koloma18/KeshaFinanceBot)
+
 ## Шаг 1: Импорт репозитория
 
 1. Зайди на [vercel.com](https://vercel.com)
@@ -52,7 +56,7 @@ Project → Settings → Environment Variables. Добавь следующие 
 
 ## Что ты получишь
 
-- URL вида `https://kesha-finance-bot.vercel.app` (можно сменить в Settings → Domains)
+- URL вида `https://kesha-finance-bot.vercel.app` (можно сменить в Settings → Domains). Текущий: [keshafinancebot.vercel.app](https://keshafinancebot.vercel.app)
 - Авто-деплой при каждом `git push` в `main`
 - Бесплатный HTTPS (автоматически)
 - PWA из коробки (`manifest.json` + service worker уже настроены)
@@ -68,12 +72,16 @@ Project → Settings → Environment Variables. Добавь следующие 
   "timestamp": 1717000000000,
   "env": {
     "hasSheets": true,
+    "hasGoogleEmail": true,
+    "hasGoogleKey": true,
     "hasMono": true
   }
 }
 ```
 
-- `hasSheets: false` → переменные Google Sheets не подхватились, перепроверь `GOOGLE_PRIVATE_KEY` (частая ошибка — неправильный формат `\n`)
+- `hasSheets: false` → `SPREADSHEET_ID` не указан или неверный
+- `hasGoogleEmail: false` → `GOOGLE_SERVICE_ACCOUNT_EMAIL` не указан
+- `hasGoogleKey: false` → `GOOGLE_PRIVATE_KEY` не подхватился (частая ошибка — неправильный формат `\n`)
 - `hasMono: false` → нормально, если Monobank не подключён
 
 ### 2. Дашборд

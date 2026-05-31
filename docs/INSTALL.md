@@ -1,5 +1,9 @@
 # Kesha Finance Tracker — Установка и запуск
 
+> 🚀 **Веб-приложение уже задеплоено на Vercel:** [keshafinancebot.vercel.app](https://keshafinancebot.vercel.app)
+>
+> Эта инструкция — для локальной разработки. Если хочешь задеплоить свою версию, см. [docs/DEPLOY.md](DEPLOY.md).
+
 ## Требования
 
 | Компонент | Версия | Проверка |
@@ -143,7 +147,10 @@ python register_commands.py
 
 ---
 
-## Шаг 4: Веб-приложение
+## Шаг 4: Веб-приложение (локальная разработка)
+
+> 🌐 Продакшн-версия уже доступна на [keshafinancebot.vercel.app](https://keshafinancebot.vercel.app).
+> Локальный запуск нужен только для разработки и тестирования.
 
 ### 4.1 Установи Node-зависимости
 

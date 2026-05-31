@@ -4,9 +4,12 @@
 
 Telegram бот с саркастичным бурундуком Кешей + PWA дашборд для аналитики.
 
+[![Vercel](https://img.shields.io/badge/vercel-deployed-black)](https://keshafinancebot.vercel.app)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://python.org)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org)
 [![Telegram](https://img.shields.io/badge/Telegram-Bot-blue)](https://core.telegram.org/bots)
+
+**Лайв-демо:** [keshafinancebot.vercel.app](https://keshafinancebot.vercel.app)
 
 ## Что умеет
 
@@ -58,13 +61,10 @@ cp .env.example .env  # заполни .env своими токенами
 python main.py
 ```
 
-### 3. Веб-приложение
-```bash
-cd web
-npm install
-cp .env.example .env  # заполни .env своими токенами
-npm run dev
-```
+### Веб-приложение (уже задеплоено)
+Открой [keshafinancebot.vercel.app](https://keshafinancebot.vercel.app) — готово.
+
+Для локального запуска: см. [docs/INSTALL.md](docs/INSTALL.md)
 
 ## Переменные окружения
 
