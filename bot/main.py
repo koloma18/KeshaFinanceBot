@@ -26,7 +26,7 @@ from handlers.recategorize import recategorize_command
 from handlers.reminder import reminder_command
 from handlers.set_currency import set_currency_command
 from handlers.settings import settings, settings_callback
-from handlers.start import help_command, start
+from handlers.start import help_callback, help_command, start
 from handlers.statistics import balance, month, today, week
 from handlers.stickers import stickers_callback, stickers_command
 from register_commands import COMMANDS as BOT_COMMANDS
@@ -506,6 +506,7 @@ def main():
         CallbackQueryHandler(settings_callback, pattern="^(set_|toxicity_|profanity_)")
     )
     app.add_handler(CallbackQueryHandler(stickers_callback, pattern="^sticker_"))
+    app.add_handler(CallbackQueryHandler(help_callback, pattern="^help_"))
     app.add_handler(
         CallbackQueryHandler(menu_callback, pattern="^(menu_|alert_toggle_)")
     )
