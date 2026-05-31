@@ -1,4 +1,4 @@
-from responses import get_greeting
+from responses import HELP_TEXT, get_greeting
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 from user_settings import DEFAULTS, load_user_settings, should_reset_alerts
@@ -30,3 +30,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(get_greeting(), reply_markup=reply_markup)
+
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_html(HELP_TEXT)

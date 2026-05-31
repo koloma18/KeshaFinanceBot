@@ -26,7 +26,7 @@ from handlers.recategorize import recategorize_command
 from handlers.reminder import reminder_command
 from handlers.set_currency import set_currency_command
 from handlers.settings import settings, settings_callback
-from handlers.start import start
+from handlers.start import help_command, start
 from handlers.statistics import balance, month, today, week
 from handlers.stickers import stickers_callback, stickers_command
 from register_commands import COMMANDS as BOT_COMMANDS
@@ -459,7 +459,7 @@ def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", start))
+    app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("income", income_command))
     app.add_handler(CommandHandler("expense", expense_command))
     app.add_handler(CommandHandler("today", today))
