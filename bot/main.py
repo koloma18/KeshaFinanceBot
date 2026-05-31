@@ -50,6 +50,10 @@ from user_settings import persist_setting
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
+
+# Не логировать токены в httpx (пишет полный URL с BOT_TOKEN)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 )
 
 TOXICITY_LABELS = {
