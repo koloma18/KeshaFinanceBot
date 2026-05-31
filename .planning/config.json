@@ -1,0 +1,18 @@
+{
+  "project": "Financial Tracker",
+  "phases": {
+    "start": 1,
+    "current": 0
+  },
+  "workflow": {
+    "auto_commit": true,
+    "auto_push": false,
+    "require_approval": ["execute-phase", "ship"],
+    "phase_prefix": "phase-"
+  },
+  "multi_agent": {
+    "gstack_autoplan": true,
+    "gstack_review": true,
+    "gstack_qa": true
+  }
+}

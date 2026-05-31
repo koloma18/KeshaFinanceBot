@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="192" y2="192" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="60" y1="28" x2="148" y2="164" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="36" fill="url(#bg)"/>
+
+  <!-- Vertical stem -->
+  <line x1="56" y1="36" x2="56" y2="156" stroke="url(#accent)" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- Upper diagonal arm -->
+  <path d="M56 62 Q 56 54, 68 52 L 124 36" stroke="url(#accent)" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- Lower diagonal arm -->
+  <path d="M56 126 Q 56 138, 72 140 L 130 156" stroke="url(#accent)" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- Acorn -->
+  <ellipse cx="136" cy="40" rx="7" ry="6" fill="#fbbf24" opacity="0.9"/>
+  <path d="M125 39 Q 136 34, 147 39" stroke="#fbbf24" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.9"/>
+  <line x1="136" y1="33" x2="136" y2="29" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
+</svg>

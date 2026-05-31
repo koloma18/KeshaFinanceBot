@@ -1,0 +1,251 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Light theme (default) ── */
+:root {
+    --color-page: #f8fafc;
+    --color-card: #ffffff;
+    --color-card-hover: #f1f5f9;
+    --color-border: #e2e8f0;
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #475569;
+    --color-text-tertiary: #94a3b8;
+    --color-accent: #d97706;
+    --color-accent-bg: rgba(217, 119, 6, 0.1);
+    --color-accent-border: rgba(217, 119, 6, 0.2);
+    --color-income: #059669;
+    --color-income-bg: rgba(5, 150, 105, 0.1);
+    --color-income-border: rgba(5, 150, 105, 0.2);
+    --color-expense: #dc2626;
+    --color-expense-bg: rgba(220, 38, 38, 0.1);
+    --color-expense-border: rgba(220, 38, 38, 0.2);
+}
+
+/* ── Explicit dark class (manual toggle) ── */
+.dark {
+    --color-page: #020617;
+    --color-card: rgba(30, 41, 59, 0.5);
+    --color-card-hover: rgba(51, 65, 85, 0.5);
+    --color-border: rgba(51, 65, 85, 0.5);
+    --color-text-primary: #f1f5f9;
+    --color-text-secondary: #94a3b8;
+    --color-text-tertiary: #64748b;
+    --color-accent: #fbbf24;
+    --color-accent-bg: rgba(251, 191, 36, 0.1);
+    --color-accent-border: rgba(251, 191, 36, 0.2);
+    --color-income: #34d399;
+    --color-income-bg: rgba(52, 211, 153, 0.1);
+    --color-income-border: rgba(52, 211, 153, 0.2);
+    --color-expense: #f87171;
+    --color-expense-bg: rgba(248, 113, 113, 0.1);
+    --color-expense-border: rgba(248, 113, 113, 0.2);
+}
+
+/* ── System auto dark (no manual class set) ── */
+@media (prefers-color-scheme: dark) {
+    :root:not(.light) {
+        --color-page: #020617;
+        --color-card: rgba(30, 41, 59, 0.5);
+        --color-card-hover: rgba(51, 65, 85, 0.5);
+        --color-border: rgba(51, 65, 85, 0.5);
+        --color-text-primary: #f1f5f9;
+        --color-text-secondary: #94a3b8;
+        --color-text-tertiary: #64748b;
+        --color-accent: #fbbf24;
+        --color-accent-bg: rgba(251, 191, 36, 0.1);
+        --color-accent-border: rgba(251, 191, 36, 0.2);
+        --color-income: #34d399;
+        --color-income-bg: rgba(52, 211, 153, 0.1);
+        --color-income-border: rgba(52, 211, 153, 0.2);
+        --color-expense: #f87171;
+        --color-expense-bg: rgba(248, 113, 113, 0.1);
+        --color-expense-border: rgba(248, 113, 113, 0.2);
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    color-scheme: light dark;
+}
+
+body {
+    font-family:
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        Roboto,
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Smooth transitions */
+@media (prefers-reduced-motion: no-preference) {
+    * {
+        scroll-behavior: smooth;
+    }
+}
+
+/* Utility: custom scrollbar hidden */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* ── Animations ── */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes countUp {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes pulse-ring {
+    0% {
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(251, 191, 36, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+    }
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes progressBarPulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.85;
+    }
+}
+
+.animate-fade-in {
+    animation: fadeInUp 0.3s ease-out both;
+}
+
+.animate-count {
+    animation: countUp 0.4s ease-out both;
+}
+
+.animate-toast-in {
+    animation: toastIn 0.3s ease-out both;
+}
+
+.animate-pulse-ring {
+    animation: pulse-ring 1.5s ease-out infinite;
+}
+
+.animate-fade-scale {
+    animation: fadeInScale 0.3s ease-out both;
+}
+
+.animate-progress-fill {
+    animation: progressBarPulse 2s ease-in-out infinite;
+}
+
+/* Stagger children */
+.stagger-children > * {
+    opacity: 0;
+    animation: fadeInUp 0.35s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) {
+    animation-delay: 0ms;
+}
+.stagger-children > *:nth-child(2) {
+    animation-delay: 60ms;
+}
+.stagger-children > *:nth-child(3) {
+    animation-delay: 120ms;
+}
+.stagger-children > *:nth-child(4) {
+    animation-delay: 180ms;
+}
+.stagger-children > *:nth-child(5) {
+    animation-delay: 240ms;
+}
+.stagger-children > *:nth-child(6) {
+    animation-delay: 300ms;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade-in,
+    .animate-count,
+    .animate-toast-in,
+    .animate-pulse-ring,
+    .animate-fade-scale,
+    .animate-progress-fill,
+    .stagger-children > * {
+        animation: none;
+        opacity: 1;
+    }
+}
