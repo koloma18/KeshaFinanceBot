@@ -191,7 +191,14 @@ EOF
 ```bash
 cd ~/Documents/FinancialTracker/bot
 source venv/bin/activate
-python3 main.py
+./start.sh          # из корня проекта
+
+Или ещё проще — алиас `kesha`:
+```bash
+echo 'alias kesha="cd ~/Documents/FinancialTracker && ./start.sh"' >> ~/.zshrc
+source ~/.zshrc
+kesha
+```
 ```
 
 Успешный запуск:
@@ -231,7 +238,14 @@ npm start
 **Вариант B — screen/tmux:**
 ```bash
 screen -S kesha
-cd ~/Documents/FinancialTracker/bot && source venv/bin/activate && python3 main.py
+cd ~/Documents/FinancialTracker/bot && source venv/bin/activate && ./start.sh          # из корня проекта
+
+Или ещё проще — алиас `kesha`:
+```bash
+echo 'alias kesha="cd ~/Documents/FinancialTracker && ./start.sh"' >> ~/.zshrc
+source ~/.zshrc
+kesha
+```
 # Ctrl+A, D — отключиться от сессии
 # screen -r kesha — вернуться
 ```

@@ -58,11 +58,17 @@ python3 -m venv venv
 source venv/bin/activate  # АКТИВИРОВАТЬ ОБЯЗАТЕЛЬНО! (Windows: venv\Scripts\activate)
 pip install -r requirements.txt
 cp .env.example .env        # заполни .env своими токенами
-python3 main.py
+cd .. && ./start.sh         # или: cd bot && source venv/bin/activate && python3 main.py
 ```
 
-> ⚠️ **Важно:** каждый раз перед запуском нужно активировать venv: `source venv/bin/activate`.
-> Без этого будет ошибка `TypeError: unsupported operand type(s) for |`.
+**Самый простой запуск — алиас `kesha`:**
+```bash
+echo 'alias kesha="cd ~/Documents/FinancialTracker && ./start.sh"' >> ~/.zshrc
+source ~/.zshrc
+kesha   # ← одной командой из любого места
+```
+
+> ⚠️ **Важно:** без активации venv будет ошибка `TypeError: unsupported operand type(s) for |`.
 
 ### Веб-приложение (уже задеплоено)
 Открой [keshafinancebot.vercel.app](https://keshafinancebot.vercel.app) — готово.
