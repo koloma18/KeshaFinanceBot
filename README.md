@@ -54,11 +54,11 @@ cd KeshaFinanceBot
 ### 2. Telegram бот
 ```bash
 cd bot
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # или venv\Scripts\activate на Windows
 pip install -r requirements.txt
 cp .env.example .env  # заполни .env своими токенами
-python main.py
+python3 main.py
 ```
 
 ### Веб-приложение (уже задеплоено)

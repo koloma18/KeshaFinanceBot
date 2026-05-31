@@ -142,7 +142,7 @@ pip install -r requirements.txt
 ```bash
 cd bot
 source venv/bin/activate
-python register_commands.py
+python3 register_commands.py
 ```
 
 ---
@@ -190,7 +190,7 @@ EOF
 ```bash
 cd ~/Documents/FinancialTracker/bot
 source venv/bin/activate
-python main.py
+python3 main.py
 ```
 
 Успешный запуск:
@@ -230,7 +230,7 @@ npm start
 **Вариант B — screen/tmux:**
 ```bash
 screen -S kesha
-cd ~/Documents/FinancialTracker/bot && source venv/bin/activate && python main.py
+cd ~/Documents/FinancialTracker/bot && source venv/bin/activate && python3 main.py
 # Ctrl+A, D — отключиться от сессии
 # screen -r kesha — вернуться
 ```
