@@ -1,6 +1,7 @@
 # Деплой на Vercel
 
 > 🌐 **Текущий деплой:** [keshafinancebot.vercel.app](https://keshafinancebot.vercel.app)
+> ☁️ **Telegram-бот деплоится отдельно на fly.io** — см. [docs/DEPLOY_BOT.md](DEPLOY_BOT.md)
 >
 > Репозиторий: [github.com/koloma18/KeshaFinanceBot](https://github.com/koloma18/KeshaFinanceBot)
 

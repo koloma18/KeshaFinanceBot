@@ -5,6 +5,7 @@
 Telegram бот с саркастичным бурундуком Кешей + PWA дашборд для аналитики.
 
 [![Vercel](https://img.shields.io/badge/vercel-deployed-black)](https://keshafinancebot.vercel.app)
+[![fly.io](https://img.shields.io/badge/fly.io-deployed-purple)](https://fly.io)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://python.org)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org)
 [![Telegram](https://img.shields.io/badge/Telegram-Bot-blue)](https://core.telegram.org/bots)
@@ -13,9 +14,10 @@ Telegram бот с саркастичным бурундуком Кешей + PW
 
 ## Что умеет
 
-### Telegram бот (30+ команд)
-- 💰 Быстрый ввод доходов и расходов
+### Telegram бот (32+ команды)
+- 💰 Быстрый ввод доходов и расходов (текстом или через кнопки)
 - 📊 Статистика: сегодня, неделя, месяц, баланс
+- 🆘 Интерактивный `/help` — 8 разделов с кнопками и примерами
 - 🎯 Бюджет на месяц и лимиты по категориям
 - 🔔 Уведомления при превышении лимитов (50%, 80%, 100%)
 - 🏦 Авто-импорт из Monobank API
@@ -24,6 +26,7 @@ Telegram бот с саркастичным бурундуком Кешей + PW
 - 😈 Стикеры и эмодзи
 - 📤 Экспорт в CSV
 - 🧂 Настраиваемый уровень токсичности (мягкий/бурчливый/жёсткий)
+- ☁️ Круглосуточная работа 24/7 на fly.io
 
 ### Веб-приложение (PWA)
 - 📊 Дашборд с балансом и статистикой
@@ -45,32 +48,38 @@ Telegram бот с саркастичным бурундуком Кешей + PW
 
 ## Быстрый старт
 
+> ☁️ **Бот уже работает 24/7 на fly.io.** Локальный запуск — только для разработки и тестирования.
+
 ### 1. Клонирование
 ```bash
 git clone https://github.com/koloma18/KeshaFinanceBot.git
 cd KeshaFinanceBot
 ```
 
-### 2. Telegram бот
+### 2. Telegram бот (локально)
 ```bash
 cd bot
 python3 -m venv venv
 source venv/bin/activate  # АКТИВИРОВАТЬ ОБЯЗАТЕЛЬНО! (Windows: venv\Scripts\activate)
 pip install -r requirements.txt
 cp .env.example .env        # заполни .env своими токенами
-cd .. && ./start.sh         # или: cd bot && source venv/bin/activate && python3 main.py
 ```
 
-**Самый простой запуск — алиас `kesha`:**
+**Запуск одной командой:**
+```bash
+./start.sh    # из корня проекта — сам активирует venv
+```
+
+**Или через алиас `kesha` из любого места:**
 ```bash
 echo 'alias kesha="cd ~/Documents/FinancialTracker && ./start.sh"' >> ~/.zshrc
 source ~/.zshrc
-kesha   # ← одной командой из любого места
+kesha         # ← одной командой из любого места
 ```
 
 > ⚠️ **Важно:** без активации venv будет ошибка `TypeError: unsupported operand type(s) for |`.
 
-### Веб-приложение (уже задеплоено)
+### Веб-приложение (уже задеплоено на Vercel)
 Открой [keshafinancebot.vercel.app](https://keshafinancebot.vercel.app) — готово.
 
 Для локального запуска: см. [docs/INSTALL.md](docs/INSTALL.md)
@@ -112,8 +121,10 @@ MONOBANK_X_TOKEN=токен_monobank  # опционально
 ```
 
 ## Документация
-- [Установка и запуск](docs/INSTALL.md)
-- [Руководство пользователя](docs/USAGE.md)
+- [Установка и запуск](docs/INSTALL.md) — локальная разработка
+- [Руководство пользователя](docs/USAGE.md) — все команды и фичи
+- [Деплой бота на fly.io](docs/DEPLOY_BOT.md) — продакшн-деплой
+- [Деплой веба на Vercel](docs/DEPLOY.md) — веб-приложение
 - [Дизайн-система](web/DESIGN.md)
 
 ## Лицензия

@@ -1,8 +1,11 @@
 # Kesha Finance Tracker — Установка и запуск
 
 > 🚀 **Веб-приложение уже задеплоено на Vercel:** [keshafinancebot.vercel.app](https://keshafinancebot.vercel.app)
+> ☁️ **Telegram бот работает 24/7 на fly.io** — локальный запуск только для разработки и тестирования.
 >
-> Эта инструкция — для локальной разработки. Если хочешь задеплоить свою версию, см. [docs/DEPLOY.md](DEPLOY.md).
+> Эта инструкция — для локальной разработки. Чтобы задеплоить:
+> - Бот → [docs/DEPLOY_BOT.md](DEPLOY_BOT.md) (fly.io)
+> - Веб → [docs/DEPLOY.md](DEPLOY.md) (Vercel)
 
 ## Требования
 
@@ -183,23 +186,30 @@ EOF
 
 ---
 
-## Шаг 5: Запуск (ВНИМАНИЕ: сначала активировать venv!)
+## Шаг 5: Запуск
 
-> ⚠️ **Каждый раз перед запуском:** сначала `source venv/bin/activate`, потом `python3 main.py`. Без venv — ошибка `TypeError`.
-### Бот
+> ☁️ **Продакшн-бот уже работает 24/7 на fly.io.** Локальный запуск — только для разработки.
+
+### Бот (локальный запуск)
+
+**Самый простой способ — `./start.sh` из корня проекта:**
 
 ```bash
-cd ~/Documents/FinancialTracker/bot
-source venv/bin/activate
-./start.sh          # из корня проекта
+cd ~/Documents/FinancialTracker
+./start.sh
+```
 
-Или ещё проще — алиас `kesha`:
+Скрипт сам перейдёт в `bot/`, активирует venv и запустит бота.
+
+**Или через алиас `kesha` из любого места:**
+
 ```bash
 echo 'alias kesha="cd ~/Documents/FinancialTracker && ./start.sh"' >> ~/.zshrc
 source ~/.zshrc
 kesha
 ```
-```
+
+> ⚠️ **Без venv — ошибка `TypeError`.** `start.sh` активирует venv автоматически.
 
 Успешный запуск:
 
@@ -208,6 +218,16 @@ kesha
 ```
 
 Бот начинает polling — можно писать ему в Telegram.
+
+### Обновление продакшена
+
+После изменений в коде бота — задеплой на fly.io:
+
+```bash
+fly deploy
+```
+
+Подробнее: [docs/DEPLOY_BOT.md](DEPLOY_BOT.md).
 
 ### Веб-приложение (dev-режим)
 
@@ -228,27 +248,24 @@ npm start
 
 Откроется на порту 3000.
 
+
+
+---
+
 ### Для постоянной работы
 
-Чтобы бот работал 24/7, запускай в фоне. **Варианты:**
+> ☁️ **Бот уже работает 24/7 на fly.io.** Ниже — альтернативные варианты, если нужен локальный хостинг.
 
-**Вариант A — macOS (launchd):**
-Создай plist-файл для автозапуска бота как фонового сервиса.
-
-**Вариант B — screen/tmux:**
+**Вариант A — screen/tmux:**
 ```bash
 screen -S kesha
-cd ~/Documents/FinancialTracker/bot && source venv/bin/activate && ./start.sh          # из корня проекта
-
-Или ещё проще — алиас `kesha`:
-```bash
-echo 'alias kesha="cd ~/Documents/FinancialTracker && ./start.sh"' >> ~/.zshrc
-source ~/.zshrc
-kesha
-```
+kesha           # алиас, запускает бота
 # Ctrl+A, D — отключиться от сессии
 # screen -r kesha — вернуться
 ```
+
+**Вариант B — macOS (launchd):**
+Создай plist-файл для автозапуска бота как фонового сервиса.
 
 **Вариант C — Raspberry Pi / VPS:**
 Скопируй проект на сервер, установи systemd-сервис.
@@ -290,8 +307,9 @@ pip install -r requirements.txt
 cd ../web
 npm install
 
-# Перезапусти бота
-# (останови текущий процесс, запусти заново)
+# Продакшн: задеплой бота на fly.io
+cd ~/Documents/FinancialTracker
+fly deploy
 ```
 
 Если менялась структура данных Google Sheets — новые листы создадутся автоматически при первом запуске бота.
