@@ -17,6 +17,7 @@ from handlers.expense import expense_callback, expense_command, expense_text
 from handlers.export_data import export_command
 from handlers.income import income_callback, income_command, income_text
 from handlers.last import delete_last, last
+from handlers.mono_day import mono_day
 from handlers.mono_import import mono_import
 from handlers.mono_info import mono_info
 from handlers.mono_rates import mono_rates
@@ -478,6 +479,7 @@ def main():
     app.add_handler(CommandHandler("mono_import", mono_import))
     app.add_handler(CommandHandler("mono_rates", mono_rates))
     app.add_handler(CommandHandler("mono_sync", mono_sync))
+    app.add_handler(CommandHandler("mono_day", mono_day))
     app.add_handler(CommandHandler("mono_info", mono_info))
 
     # ── Phase 2 — Budget ──

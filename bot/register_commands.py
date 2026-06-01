@@ -36,6 +36,7 @@ COMMANDS = [
     BotCommand("mono_import", "🏦 Импорт из Monobank"),
     BotCommand("mono_rates", "💱 Курсы валют Monobank"),
     BotCommand("mono_sync", "🔄 Синхронизация Monobank"),
+    BotCommand("mono_day", "📅 Выписка за день Monobank"),
     BotCommand("mono_info", "💳 Счета Monobank"),
 ]
 
