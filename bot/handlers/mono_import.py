@@ -60,9 +60,13 @@ async def mono_import(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             )
             return
         except Exception as e:
-            logger.error("Unexpected error getting client info: %s", e)
+            logger.error(
+                "Unexpected error getting client info: %s (type: %s)",
+                e,
+                type(e).__name__,
+            )
             await status_msg.edit_text(
-                "❌ Не удалось подключиться к Monobank. Попробуй позже."
+                f"❌ Не удалось подключиться: {type(e).__name__}"
             )
             return
 
