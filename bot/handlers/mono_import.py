@@ -71,102 +71,95 @@ async def mono_import(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             await status_msg.edit_text("❌ У тебя нет счетов в Monobank.")
             return
 
-        account = accounts[0]
-        account_id = account.get("id")
-        if not account_id:
-            await status_msg.edit_text("❌ Не удалось получить ID счёта.")
+        # Основные счета: 5259 и 4454
+        PRIORITY_MASKS = ["5259", "4454"]
+        target_accounts = []
+        for mask in PRIORITY_MASKS:
+            for acc in accounts:
+                masked = (acc.get("maskedPan", [""]) or [""])[0]
+                if masked.endswith(mask):
+                    target_accounts.append(acc)
+                    break
+
+        if not target_accounts:
+            await status_msg.edit_text("❌ Счета 5259 и 4454 не найдены.")
             return
 
         now = int(datetime.now(timezone.utc).timestamp())
         from_ts = now - days * 86400
 
-        masked = account.get("maskedPan", ["???"])
-        await status_msg.edit_text(
-            f"🔄 Загружаю выписку за {days} дн.\nСчёт: {masked[0]}"
-        )
+        grand_total = 0
+        grand_skipped = 0
+        grand_errors = 0
+        account_lines: list[str] = []
 
-        try:
-            statements = await client.get_statement(account_id, from_ts, now)
-        except MonobankError as e:
-            logger.error("Monobank statement error: %s", e)
-            await status_msg.edit_text(f"❌ Ошибка при получении выписки: {e.message}")
-            return
-        except Exception as e:
-            logger.error("Unexpected error getting statement: %s", e)
-            await status_msg.edit_text(
-                "❌ Не удалось получить выписку. Попробуй позже."
-            )
-            return
-
-        if not statements:
-            await status_msg.edit_text(f"ℹ️ За последние {days} дн. транзакций нет.")
-            return
-
-        total = 0
-        skipped = 0
-        errors = 0
-        processed = 0
-
-        for tx in statements:
-            if tx.get("amount", 0) == 0:
-                skipped += 1
+        for account in target_accounts:
+            account_id = account.get("id")
+            if not account_id:
                 continue
+            masked = (account.get("maskedPan", ["???"]) or ["???"])[0]
 
-            source_key = f"mono:{tx['id']}"
+            await status_msg.edit_text(f"🔄 Загружаю {masked}...")
 
             try:
-                existing = find_row_by_source(source_key)
-            except Exception as e:
-                logger.warning("Ошибка проверки дубликата для %s: %s", source_key, e)
-                existing = None
-
-            if existing is not None:
-                skipped += 1
+                statements = await client.get_statement(account_id, from_ts, now)
+            except MonobankError as e:
+                account_lines.append(f"💳 {masked}: ❌ {e.message}")
+                continue
+            except Exception:
+                account_lines.append(f"💳 {masked}: ❌ ошибка")
                 continue
 
-            row = build_transaction_row(tx)
-            if row is None:
-                skipped += 1
+            if not statements:
+                account_lines.append(f"💳 {masked}: нет транзакций")
                 continue
 
-            try:
-                ok = add_row(row)
-            except Exception as e:
-                logger.error("Ошибка добавления строки в Sheets: %s", e)
-                ok = False
-
-            if ok:
-                total += 1
-            else:
-                errors += 1
-
-            processed += 1
-
-            if processed % PROGRESS_INTERVAL == 0:
-                mcc_desc = get_mcc_description(tx.get("mcc", 0))
+            total = 0
+            skipped = 0
+            errors = 0
+            for tx in statements:
+                if tx.get("amount", 0) == 0:
+                    skipped += 1
+                    continue
+                source_key = f"mono:{tx['id']}"
                 try:
-                    await status_msg.edit_text(
-                        f"🔄 Импортирую...\n"
-                        f"✅ Добавлено: {total}\n"
-                        f"⏭ Пропущено: {skipped}\n"
-                        f"❌ Ошибок: {errors}\n"
-                        f"\nПоследняя: {mcc_desc}"
-                    )
+                    existing = find_row_by_source(source_key)
                 except Exception:
-                    pass
+                    existing = None
+                if existing is not None:
+                    skipped += 1
+                    continue
+                row = build_transaction_row(tx)
+                if row is None:
+                    skipped += 1
+                    continue
+                try:
+                    ok = add_row(row)
+                except Exception:
+                    ok = False
+                if ok:
+                    total += 1
+                else:
+                    errors += 1
 
-        currency_name = currency_code_to_name(account.get("currencyCode", 980))
-        masked_pan = account.get("maskedPan", [""])[0]
+            account_lines.append(
+                f"💳 {masked}: +{total}" + (f" (⏭{skipped})" if skipped else "")
+            )
+            grand_total += total
+            grand_skipped += skipped
+            grand_errors += errors
+
         lines = [
             f"✅ <b>Импорт завершён</b>",
-            f"",
             f"📅 Период: последние {days} дн.",
-            f"💳 Счёт: {masked_pan} ({currency_name})",
             f"",
-            f"📥 Добавлено: <b>{total}</b>",
-            f"⏭ Пропущено (дубликаты/нулевые): {skipped}",
+            *account_lines,
+            f"",
+            f"📥 Всего: <b>{grand_total}</b>",
         ]
-        if errors:
-            lines.append(f"❌ Ошибок записи: {errors}")
+        if grand_skipped:
+            lines.append(f"⏭ Пропущено: {grand_skipped}")
+        if grand_errors:
+            lines.append(f"❌ Ошибок: {grand_errors}")
 
         await status_msg.edit_text("\n".join(lines), parse_mode="HTML")
