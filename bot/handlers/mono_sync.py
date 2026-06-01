@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 MAX_STATEMENT_DAYS = 31
 CHUNK_SECONDS = MAX_STATEMENT_DAYS * 86400
 
-PRIORITY_MASKS = ["5259", "4454"]
+PRIORITY_MASKS = ["5259"]
 
 
 async def mono_sync(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

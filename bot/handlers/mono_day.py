@@ -6,7 +6,6 @@
 
 Счета:
   1 = 4441 **** 5259 (основная)
-  2 = 4441 **** 4454
 """
 
 import logging
@@ -74,8 +73,8 @@ async def mono_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(f"❌ {e}")
         return
 
-    # Маски счетов: 1 = 5259, 2 = 4454
-    TARGET_MASKS: dict[int, str] = {1: "5259", 2: "4454"}
+    # Маски счетов: 1 = 5259
+    TARGET_MASKS: dict[int, str] = {1: "5259"}
     target_suffix = TARGET_MASKS[account_num]
 
     now = datetime.now(timezone.utc)

@@ -72,7 +72,7 @@ async def mono_import(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             return
 
         # Основные счета: 5259 и 4454
-        PRIORITY_MASKS = ["5259", "4454"]
+        PRIORITY_MASKS = ["5259"]
         target_accounts = []
         for mask in PRIORITY_MASKS:
             for acc in accounts:
