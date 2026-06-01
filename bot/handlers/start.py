@@ -74,8 +74,8 @@ HELP_SECTIONS = {
         "<code>/mono_info</code> — счета и балансы\n"
         "<code>/mono_rates</code> — курсы валют\n"
         "<code>/mono_sync</code> — докачать пропущенные\n"
-        "<code>/mono_day 25</code> — выписка за конкретный день\n"
-        "<code>/mono_day 15.04</code> — за 15 апреля\n\n"
+        "<code>/mono_day 25 1</code> — выписка за 25-е, счёт 5259\n"
+        "<code>/mono_day 15.04 2</code> — за 15 апреля, счёт 4454\n\n"
         "⚠️ Monobank API: 1 запрос в 60 секунд. Импорт небыстрый."
     ),
     "manage": (

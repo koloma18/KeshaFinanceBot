@@ -1,7 +1,12 @@
 """Обработчик команды /mono_day — выгрузка транзакций за конкретный день.
 
-Формат: /mono_day <день>[.<месяц>] — например /mono_day 25 или /mono_day 25.05
-По умолчанию: текущий месяц.
+Формат: /mono_day <день>[.<месяц>] <номер_счёта>
+Например: /mono_day 1 2 — 1-е число, второй счёт
+          /mono_day 25.05 1 — 25 мая, первый счёт
+
+Счета:
+  1 = 4441 **** 5259 (основная)
+  2 = 4441 **** 4454
 """
 
 import logging
@@ -19,52 +24,59 @@ logger = logging.getLogger(__name__)
 PROGRESS_INTERVAL = 10
 
 
-def _parse_day(args: list[str]) -> tuple[int, int]:
-    """Разобрать аргумент day[.month]. Возвращает (day, month)."""
-    if not args:
-        raise ValueError("Укажи день. Например: /mono_day 25 или /mono_day 25.05")
+def _parse_day(args: list[str]) -> tuple[int, int, int]:
+    """Разобрать аргументы: день[.месяц] и номер счёта. Возвращает (day, month, account_num)."""
+    if len(args) < 2:
+        raise ValueError(
+            "Укажи день и номер счёта. Например:\n"
+            "/mono_day 1 1 — 1-е число, счёт 5259\n"
+            "/mono_day 25.05 2 — 25 мая, счёт 4454"
+        )
 
-    raw = args[0].strip()
+    date_raw = args[0].strip()
+    account_raw = args[1].strip()
     now = datetime.now(timezone.utc)
 
-    if "." in raw:
-        parts = raw.split(".")
+    if "." in date_raw:
+        parts = date_raw.split(".")
         if len(parts) != 2 or not parts[0].isdigit() or not parts[1].isdigit():
-            raise ValueError(f"Формат: день.месяц (например 25.05). Получено: {raw}")
+            raise ValueError(
+                f"Формат даты: день.месяц (например 25.05). Получено: {date_raw}"
+            )
         day = int(parts[0])
         month = int(parts[1])
     else:
-        if not raw.isdigit():
-            raise ValueError(f"«{raw}» — не число. Укажи день: /mono_day 25")
-        day = int(raw)
+        if not date_raw.isdigit():
+            raise ValueError(f"«{date_raw}» — не число. Укажи день: /mono_day 25 1")
+        day = int(date_raw)
         month = now.month
+
+    if not account_raw.isdigit():
+        raise ValueError(f"«{account_raw}» — не номер счёта. Укажи 1 или 2.")
+    account_num = int(account_raw)
+    if account_num < 1 or account_num > 2:
+        raise ValueError(f"Номер счёта должен быть 1 или 2. Получено: {account_num}")
 
     if day < 1 or day > 31:
         raise ValueError(f"День должен быть от 1 до 31. Получено: {day}")
     if month < 1 or month > 12:
         raise ValueError(f"Месяц должен быть от 1 до 12. Получено: {month}")
 
-    return day, month
+    return day, month, account_num
 
 
 async def mono_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Выгрузка транзакций Monobank за конкретный день.
-    /mono_day 25 [номер_счёта]"""
+    /mono_day <дата> <номер_счёта>"""
     try:
-        day, month = _parse_day(context.args)
+        day, month, account_num = _parse_day(context.args)
     except ValueError as e:
         await update.message.reply_text(f"❌ {e}")
         return
 
-    # Второй аргумент — номер счёта (опционально)
-    account_idx = 0
-    if len(context.args) >= 2:
-        try:
-            account_idx = int(context.args[1]) - 1
-            if account_idx < 0:
-                account_idx = 0
-        except ValueError:
-            pass
+    # Маски счетов: 1 = 5259, 2 = 4454
+    TARGET_MASKS: dict[int, str] = {1: "5259", 2: "4454"}
+    target_suffix = TARGET_MASKS[account_num]
 
     now = datetime.now(timezone.utc)
     year = now.year
@@ -102,13 +114,24 @@ async def mono_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             await status_msg.edit_text("❌ Нет счетов в Monobank.")
             return
 
-        if account_idx >= len(accounts):
+        # Найти счёт по последним 4 цифрам maskedPan
+        account = None
+        for acc in accounts:
+            masked = acc.get("maskedPan", [""])[0]
+            if masked.endswith(target_suffix):
+                account = acc
+                break
+
+        if account is None:
+            acc_list = "\n".join(
+                f"  • {a.get('maskedPan', ['???'])[0]} ({a.get('type', '?')})"
+                for a in accounts
+            )
             await status_msg.edit_text(
-                f"❌ Счёт #{account_idx + 1} не найден. У тебя {len(accounts)} счет(ов)."
+                f"❌ Счёт *{target_suffix} не найден.\n\nДоступные счета:\n{acc_list}",
+                parse_mode="HTML",
             )
             return
-
-        account = accounts[account_idx]
         account_id = account.get("id")
         if not account_id:
             await status_msg.edit_text("❌ Не удалось получить ID счёта.")
@@ -126,16 +149,8 @@ async def mono_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
         if not statements:
             masked = account.get("maskedPan", ["???"])[0]
-            accounts_list = "\n".join(
-                f"  {i + 1}. {a.get('maskedPan', ['???'])[0]} ({a.get('type', '?')} · {currency_code_to_name(a.get('currencyCode', 980))})"
-                for i, a in enumerate(accounts)
-            )
             await status_msg.edit_text(
-                f"ℹ️ За {date_label} транзакций нет.\n\n"
-                f"Счёт: {masked}\n\n"
-                f"Твои счета:\n{accounts_list}\n\n"
-                f"Используй /mono_day {day}.{month:02d} <b>номер</b> чтобы выбрать другой счёт.",
-                parse_mode="HTML",
+                f"ℹ️ За {date_label} транзакций нет.\nСчёт: {masked}"
             )
             return
 
