@@ -1,15 +1,23 @@
-app = "kesha-finance-bot"
-primary_region = "ams"
-kill_signal = "SIGINT"
-kill_timeout = 5
+# fly.toml app configuration file generated for kesha-finance-bot on 2026-05-31T19:42:36+03:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'kesha-finance-bot'
+primary_region = 'ams'
+kill_signal = 'SIGINT'
+kill_timeout = '5s'
 
 [build]
-  dockerfile = "bot/Dockerfile"
+  dockerfile = 'bot/Dockerfile'
 
 [[services]]
+  protocol = ''
   internal_port = 8080
+  ports = []
 
-[[vm]]
-  cpu_kind = "shared"
+[vm]
+  memory = '256mb'
   cpus = 1
-  memory = "256mb"
+  memory_mb = 256
+  auto_stop_machines = false
