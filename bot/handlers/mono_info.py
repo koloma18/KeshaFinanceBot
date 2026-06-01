@@ -74,9 +74,22 @@ async def mono_info(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             )
             return
 
-    # --- Формируем ответ ---
-    client_name = info.get("name", "—")
+    # --- Сортируем счета: основные первыми ---
     accounts = info.get("accounts", [])
+
+    # Приоритетные маски: 5259 → #1, 4454 → #2
+    PRIORITY_MASKS = ["5259", "4454"]
+
+    def _account_priority(acc: dict) -> int:
+        masked = (acc.get("maskedPan", [""]) or [""])[0]
+        for i, suffix in enumerate(PRIORITY_MASKS):
+            if masked.endswith(suffix):
+                return i
+        return len(PRIORITY_MASKS)
+
+    accounts = sorted(accounts, key=_account_priority)
+
+    client_name = info.get("name", "—")
 
     lines = [
         f"👤 <b>Клиент:</b> {client_name}",
