@@ -41,7 +41,9 @@ export default function RootLayout({
       <body className="min-h-dvh bg-kesha-page text-kesha-text-primary antialiased">
         <ToastProvider>
           <Header />
-          <main className="mx-auto max-w-lg px-4 py-4 pb-20">{children}</main>
+          <main className="mx-auto max-w-lg md:max-w-2xl px-4 py-4 pb-20">
+            {children}
+          </main>
           <BottomNav />
         </ToastProvider>
       </body>

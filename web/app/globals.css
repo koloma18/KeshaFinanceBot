@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+    .pt-safe {
+        padding-top: env(safe-area-inset-top, 0px);
+    }
+    .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+}
+
 /* ── Light theme (default) ── */
 :root {
     --color-page: #f8fafc;
@@ -20,6 +29,18 @@
     --color-expense: #dc2626;
     --color-expense-bg: rgba(220, 38, 38, 0.1);
     --color-expense-border: rgba(220, 38, 38, 0.2);
+    --chart-1: #ef4444;
+    --chart-2: #f97316;
+    --chart-3: #d97706;
+    --chart-4: #65a30d;
+    --chart-5: #059669;
+    --chart-6: #0d9488;
+    --chart-7: #0284c7;
+    --chart-8: #4f46e5;
+    --chart-9: #7c3aed;
+    --chart-10: #c026d3;
+    --chart-11: #db2777;
+    --chart-12: #475569;
 }
 
 /* ── Explicit dark class (manual toggle) ── */
@@ -40,6 +61,18 @@
     --color-expense: #f87171;
     --color-expense-bg: rgba(248, 113, 113, 0.1);
     --color-expense-border: rgba(248, 113, 113, 0.2);
+    --chart-1: #f87171;
+    --chart-2: #fb923c;
+    --chart-3: #fbbf24;
+    --chart-4: #a3e635;
+    --chart-5: #34d399;
+    --chart-6: #2dd4bf;
+    --chart-7: #38bdf8;
+    --chart-8: #818cf8;
+    --chart-9: #a78bfa;
+    --chart-10: #e879f9;
+    --chart-11: #f472b6;
+    --chart-12: #94a3b8;
 }
 
 /* ── System auto dark (no manual class set) ── */
@@ -61,6 +94,18 @@
         --color-expense: #f87171;
         --color-expense-bg: rgba(248, 113, 113, 0.1);
         --color-expense-border: rgba(248, 113, 113, 0.2);
+        --chart-1: #f87171;
+        --chart-2: #fb923c;
+        --chart-3: #fbbf24;
+        --chart-4: #a3e635;
+        --chart-5: #34d399;
+        --chart-6: #2dd4bf;
+        --chart-7: #38bdf8;
+        --chart-8: #818cf8;
+        --chart-9: #a78bfa;
+        --chart-10: #e879f9;
+        --chart-11: #f472b6;
+        --chart-12: #94a3b8;
     }
 }
 

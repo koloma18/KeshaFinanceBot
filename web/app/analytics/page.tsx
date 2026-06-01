@@ -69,6 +69,21 @@ export default function AnalyticsPage() {
     return { income: Math.round(income), expense: Math.round(expense) };
   }, [transactions, period]);
 
+  const netResult = totals.income - totals.expense;
+
+  const keshaInsight = useMemo(() => {
+    if (totals.income === 0 && totals.expense === 0) return null;
+    const ratio = totals.income > 0 ? totals.expense / totals.income : 1;
+    if (ratio < 0.3)
+      return "Ты копишь как бурундук перед зимой. Кеша впечатлён.";
+    if (ratio < 0.6)
+      return "Тратишь меньше половины дохода. Кеша одобряет твой самоконтроль.";
+    if (ratio < 0.9)
+      return "Баланс хороший, но Кеша советует присмотреться к подпискам.";
+    if (ratio < 1.1) return "Тратишь почти всё. Кеша нервно грызёт жёлудь.";
+    return "Расходы превышают доходы. Кеша в панике ищет твою заначку.";
+  }, [totals]);
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -98,13 +113,16 @@ export default function AnalyticsPage() {
     );
   }
 
-  const netResult = totals.income - totals.expense;
-
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle>Аналитика</CardTitle>
+          {keshaInsight && (
+            <p className="mt-1 text-xs text-kesha-accent italic leading-relaxed">
+              🐿️ «{keshaInsight}»
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
@@ -125,7 +143,6 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* Quick stats — flat layout, no nested cards */}
           <div className="mt-4 flex items-center gap-4 py-2">
             <div className="flex-1">
               <p className="text-xs text-kesha-text-tertiary mb-1">Доход</p>

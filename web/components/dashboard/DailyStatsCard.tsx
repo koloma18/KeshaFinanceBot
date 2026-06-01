@@ -54,6 +54,16 @@ export function DailyStatsCard({
             </span>
           </div>
         </div>
+        <p className="text-xs text-kesha-accent italic pt-1">
+          🐿️{" "}
+          {total > 0
+            ? "Кеша доволен. Продолжай."
+            : total === 0
+              ? "День в ноль. Стабильность."
+              : total > -500
+                ? "Кеша замечает утечку орехов."
+                : "Кеша в шоке от таких трат."}
+        </p>
       </CardContent>
     </Card>
   );

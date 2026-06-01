@@ -199,6 +199,11 @@ export default function TransactionsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Транзакции</CardTitle>
+          {!loading && transactions.length > 0 && (
+            <p className="mt-1 text-xs text-kesha-accent italic leading-relaxed">
+              🐿️ «Все транзакции перед тобой. Кеша следит за каждой.»
+            </p>
+          )}
           {!loading && (
             <p className="mt-1 text-xs text-kesha-text-tertiary">
               Всего:{" "}

@@ -26,7 +26,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-kesha-page border-t border-kesha-border pb-safe lg:hidden">
-      <div className="mx-auto max-w-lg">
+      <div className="mx-auto max-w-lg md:max-w-2xl">
         <div className="flex items-center justify-around">
           {NAV_ITEMS.map((item) => {
             const isActive =

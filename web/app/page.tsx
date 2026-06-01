@@ -7,6 +7,7 @@ import {
   BudgetCard,
   RatesCard,
   RecentTransactions,
+  MonoAccountsCard,
 } from "@/components/dashboard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { BalanceSkeleton, CardSkeleton } from "@/components/ui/Skeleton";
@@ -304,6 +305,9 @@ export default function DashboardPage() {
       <div className="animate-fade-in">
         <BalanceCard balance={balance} loading={false} />
       </div>
+
+      {/* 1.5 Monobank accounts */}
+      <MonoAccountsCard />
 
       {/* 2. Today + Week stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
