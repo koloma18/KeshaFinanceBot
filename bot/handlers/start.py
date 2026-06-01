@@ -73,7 +73,9 @@ HELP_SECTIONS = {
         "<code>/mono_import 30</code> — за 30 дней (макс 31)\n"
         "<code>/mono_info</code> — счета и балансы\n"
         "<code>/mono_rates</code> — курсы валют\n"
-        "<code>/mono_sync</code> — докачать пропущенные\n\n"
+        "<code>/mono_sync</code> — докачать пропущенные\n"
+        "<code>/mono_day 25</code> — выписка за конкретный день\n"
+        "<code>/mono_day 15.04</code> — за 15 апреля\n\n"
         "⚠️ Monobank API: 1 запрос в 60 секунд. Импорт небыстрый."
     ),
     "manage": (
