@@ -43,10 +43,11 @@ function setupSheets() {
   createBudgetsSheet();
   createCategoriesSheet();
   createSettingsSheet();
+  createBankAccountsSheet();
 
   SpreadsheetApp.getUi().alert(
     '✅ Kesha готов!\n\n' +
-    'Созданы листы: Transactions, Budgets, Categories, Settings\n\n' +
+    'Созданы листы: Transactions, Budgets, Categories, Settings, BankAccounts\n\n' +
     'Осталось скопировать .env в бота и запустить.'
   );
 }
@@ -144,6 +145,27 @@ function createCategoriesSheet() {
 
   sheet.setColumnWidth(1, 100);
   sheet.setColumnWidth(2, 250);
+}
+
+// --- BankAccounts ---
+
+function createBankAccountsSheet() {
+  var sheet = getOrCreateSheet('BankAccounts');
+  sheet.clear();
+
+  var headers = ['Name', 'PAN', 'Balance', 'Currency'];
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.getRange(1, 1, 1, headers.length)
+    .setFontWeight('bold')
+    .setBackground('#1e293b')
+    .setFontColor('#fbbf24');
+  sheet.setFrozenRows(1);
+
+  sheet.getRange('C2:C').setNumberFormat('#,##0.00');
+  sheet.setColumnWidth(1, 150);
+  sheet.setColumnWidth(2, 200);
+  sheet.setColumnWidth(3, 120);
+  sheet.setColumnWidth(4, 100);
 }
 
 // --- Settings ---

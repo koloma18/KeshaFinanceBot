@@ -2,7 +2,7 @@
 .env
 .env.local
 .env.production
-# !!.env.example — шаблоны БЕЗ секретов, должны коммититься
+!.env.example
 
 # Python
 __pycache__/
@@ -21,3 +21,5 @@ node_modules/
 
 # OS
 .DS_Store
+.vercel
+.env*

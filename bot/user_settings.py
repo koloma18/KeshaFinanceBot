@@ -10,8 +10,8 @@ import logging
 from datetime import datetime
 
 from sheets import (
+    _ensure_sheet,
     delete_setting,
-    get_or_create_sheet,
     get_settings_rows,
     upsert_setting,
 )
@@ -53,9 +53,9 @@ DEFAULTS = {
 }
 
 
-def _ensure_sheet() -> None:
+def _ensure_settings_sheet() -> None:
     """Убедиться что лист Settings существует."""
-    get_or_create_sheet(SETTINGS_SHEET, SETTINGS_HEADERS)
+    _ensure_sheet(SETTINGS_SHEET, SETTINGS_HEADERS)
 
 
 def load_user_settings(user_id: str = "default") -> dict:
@@ -64,7 +64,7 @@ def load_user_settings(user_id: str = "default") -> dict:
     Возвращает словарь {key: parsed_value}.
     Парсит "True"/"False" → bool, числа → int/float, остальное → str.
     """
-    _ensure_sheet()
+    _ensure_settings_sheet()
     rows = get_settings_rows()
     result: dict = {}
 
@@ -95,7 +95,7 @@ def save_user_settings(settings: dict, user_id: str = "default") -> None:
 
     Сохраняет только ключи из PERSISTED_KEYS.
     """
-    _ensure_sheet()
+    _ensure_settings_sheet()
     for key, value in settings.items():
         if key in PERSISTED_KEYS:
             upsert_setting(key, str(value))
@@ -110,7 +110,7 @@ def persist_setting(key: str, value, user_id: str = "default") -> None:
     if key not in PERSISTED_KEYS:
         return
     try:
-        _ensure_sheet()
+        _ensure_settings_sheet()
         if value is None:
             delete_setting(key)
         else:

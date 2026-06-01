@@ -20,7 +20,6 @@
 
 **Опционально:**
 - Monobank X-Token — для авто-импорта банковских операций
-- ngrok или публичный сервер — для Monobank webhook
 
 ---
 
@@ -28,17 +27,18 @@
 
 ```bash
 cd ~/Documents
+git clone git@github.com:koloma18/KeshaFinanceBot.git FinancialTracker
 cd FinancialTracker
 ```
 
-Скопируй шаблон переменных окружения (создай вручную, если файла ещё нет):
+Создай `.env`:
 
 ```bash
 touch .env
 chmod 600 .env
 ```
 
-Открой `.env` в редакторе и заполни:
+Заполни:
 
 ```ini
 # Telegram
@@ -66,43 +66,36 @@ CURRENCIES=UAH,USD,EUR,USDT
 ### 2.1 Включи Google Sheets API
 
 1. Открой [Google Cloud Console](https://console.cloud.google.com/)
-2. Создай проект (или выбери существующий): **New Project → «Kesha Tracker»**
-3. В боковом меню: **APIs & Services → Library**
-4. Найди **Google Sheets API** → **Enable**
+2. Создай проект: **New Project → «Kesha Tracker»**
+3. **APIs & Services → Library** → Найди **Google Sheets API** → **Enable**
 
 ### 2.2 Создай Service Account
 
 1. **APIs & Services → Credentials → Create Credentials → Service Account**
-2. Имя: `kesha-bot`
-3. Роль: **Basic → Editor** (достаточно для Sheets)
-4. Нажми на созданный аккаунт → **Keys → Add Key → JSON**
-5. Скачается JSON-файл — из него нам нужны:
-   - `client_email` → скопируй в `.env` как `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-   - `private_key` → скопируй в `.env` как `GOOGLE_PRIVATE_KEY`
-     - **Важно:** в `.env` ключ должен быть в одной строке с `\n` между строками
-     - Пример: `GOOGLE_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\n`
+2. Имя: `kesha-bot`, роль: **Basic → Editor**
+3. Нажми на созданный аккаунт → **Keys → Add Key → JSON**
+4. Из JSON-файла:
+   - `client_email` → `GOOGLE_SERVICE_ACCOUNT_EMAIL`
+   - `private_key` → `GOOGLE_PRIVATE_KEY` (одной строкой с `\n`)
 
 ### 2.3 Создай Google Таблицу
 
-1. Открой [sheets.google.com](https://sheets.google.com) → **Blank spreadsheet**
-2. Назови таблицу (например: `Kesha Finances`)
-3. Из URL скопируй `SPREADSHEET_ID`:
-   ```
-   https://docs.google.com/spreadsheets/d/ЭТО_SPREADSHEET_ID/edit
-   ```
-4. Вставь в `.env` → `SPREADSHEET_ID=этот_id`
+1. [sheets.google.com](https://sheets.google.com) → **Blank spreadsheet**
+2. Из URL скопируй `SPREADSHEET_ID` → в `.env`
+3. **Share** → добавь email Service Account как **Editor**
 
-### 2.4 Дай доступ Service Account
+### 2.4 Настрой таблицу через Apps Script
 
-1. В созданной таблице нажми **Share**
-2. Добавь email Service Account (тот самый `client_email`) как **Editor**
-3. Сними галку «Notify people» → **Send**
+1. В таблице: **Расширения → Apps Script**
+2. Скопируй содержимое `scripts/Code.gs`
+3. Запусти `setupSheets()` — создаст все листы
 
-**Бот сам создаст нужные листы при первом запуске:**
-- `Transactions` — все операции
-- `Categories` — кастомные категории
+**Создаются листы:**
+- `Transactions` — все операции (A-I)
 - `Budgets` — бюджеты и лимиты
+- `Categories` — кастомные категории
 - `Settings` — настройки пользователя
+- `BankAccounts` — ручные банковские счета
 
 ---
 
@@ -110,16 +103,10 @@ CURRENCIES=UAH,USD,EUR,USDT
 
 ### 3.1 Создай бота в BotFather
 
-1. Открой Telegram → найди [@BotFather](https://t.me/botfather)
-2. Отправь команду `/newbot`
-3. Введи имя: `Kesha Finance Tracker`
-4. Введи username: `kesha_finance_bot` (должен заканчиваться на `bot`)
-5. BotFather выдаст токен — скопируй его в `.env` → `BOT_TOKEN`
-6. Настрой бота (опционально):
-   - `/setdescription` — описание профиля
-   - `/setabouttext` — текст «About»
-   - `/setuserpic` — аватарку хомяка
-   - `/setcommands` — список команд (бот сам зарегистрирует команды при старте)
+1. Telegram → [@BotFather](https://t.me/botfather) → `/newbot`
+2. Имя: `Kesha Finance Tracker`
+3. Username: `kesha_finance_bot` (должен заканчиваться на `bot`)
+4. Токен → в `.env` → `BOT_TOKEN`
 
 ### 3.2 Установи Python-зависимости
 
@@ -130,30 +117,33 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Установятся пакеты:
+Установятся:
 - `python-telegram-bot==21.11.1` — фреймворк бота
-- `google-api-python-client` — Google Sheets API
-- `google-auth` + `google-auth-oauthlib` — авторизация Google
+- `google-auth==2.38.0` — JWT-авторизация Google
+- `httpx` — HTTP-клиент (Sheets API + Monobank)
 - `python-dotenv` — чтение `.env`
-- `httpx` + `aiohttp` — HTTP-клиенты для Monobank API
 
-### 3.3 Зарегистрируй команды
+> Бот использует **raw HTTP** для Google Sheets API (через `httpx`), а не `google-api-python-client`. Это экономит ~50MB RAM.
 
-После первого запуска бот автоматически зарегистрирует 32 команды в Telegram.
-Можно также запустить регистрацию вручную:
+### 3.3 Запуск
 
 ```bash
-cd bot
-source venv/bin/activate
-python3 register_commands.py
+cd ~/Documents/FinancialTracker
+./start.sh
+```
+
+Бот сам зарегистрирует 37 команд в Telegram при старте. Успешный запуск:
+
+```
+🚀 Kesha запущен!
+✅ 37 bot commands registered
 ```
 
 ---
 
 ## Шаг 4: Веб-приложение (локальная разработка)
 
-> 🌐 Продакшн-версия уже доступна на [keshafinancebot.vercel.app](https://keshafinancebot.vercel.app).
-> Локальный запуск нужен только для разработки и тестирования.
+> 🌐 Продакшн-версия: [keshafinancebot.vercel.app](https://keshafinancebot.vercel.app)
 
 ### 4.1 Установи Node-зависимости
 
@@ -165,12 +155,13 @@ npm install
 Установятся:
 - `next@14` + `react@18` — Next.js фреймворк
 - `tailwindcss` + `postcss` + `autoprefixer` — стили
-- `googleapis` + `google-auth-library` — Google Sheets для веба
-- `recharts` — графики аналитики
+- `googleapis` + `google-auth-library` — Google Sheets API
 
-### 4.2 Переменные окружения для веба
+> Графики используют **pure SVG** (не Recharts) — совместимы с iOS Safari.
 
-Создай `.env.local` в папке `web/` (веб читает те же переменные, что и бот):
+### 4.2 Переменные окружения
+
+Создай `.env.local` в `web/` (те же переменные, что в корневом `.env`):
 
 ```bash
 cd web
@@ -182,137 +173,41 @@ MONOBANK_X_TOKEN=ваш_monobank_x_token
 EOF
 ```
 
-> `.env.local` уже в `.gitignore`.
-
----
-
-## Шаг 5: Запуск
-
-> ☁️ **Продакшн-бот уже работает 24/7 на fly.io.** Локальный запуск — только для разработки.
-
-### Бот (локальный запуск)
-
-**Самый простой способ — `./start.sh` из корня проекта:**
-
-```bash
-cd ~/Documents/FinancialTracker
-./start.sh
-```
-
-Скрипт сам перейдёт в `bot/`, активирует venv и запустит бота.
-
-**Или через алиас `kesha` из любого места:**
-
-```bash
-echo 'alias kesha="cd ~/Documents/FinancialTracker && ./start.sh"' >> ~/.zshrc
-source ~/.zshrc
-kesha
-```
-
-> ⚠️ **Без venv — ошибка `TypeError`.** `start.sh` активирует venv автоматически.
-
-Успешный запуск:
-
-```
-🚀 Kesha запущен!
-```
-
-Бот начинает polling — можно писать ему в Telegram.
-
-### Обновление продакшена
-
-После изменений в коде бота — задеплой на fly.io:
-
-```bash
-fly deploy
-```
-
-Подробнее: [docs/DEPLOY_BOT.md](DEPLOY_BOT.md).
-
-### Веб-приложение (dev-режим)
-
-```bash
-cd ~/Documents/FinancialTracker/web
-npm run dev
-```
-
-Откроется на [http://localhost:3000](http://localhost:3000).
-
-### Production-сборка веба
+### 4.3 Запуск
 
 ```bash
 cd web
-npm run build
-npm start
+npm run dev        # dev-режим → http://localhost:3000
+npm run build && npm start   # production-сборка
 ```
-
-Откроется на порту 3000.
-
-
 
 ---
 
-### Для постоянной работы
-
-> ☁️ **Бот уже работает 24/7 на fly.io.** Ниже — альтернативные варианты, если нужен локальный хостинг.
-
-**Вариант A — screen/tmux:**
-```bash
-screen -S kesha
-kesha           # алиас, запускает бота
-# Ctrl+A, D — отключиться от сессии
-# screen -r kesha — вернуться
-```
-
-**Вариант B — macOS (launchd):**
-Создай plist-файл для автозапуска бота как фонового сервиса.
-
-**Вариант C — Raspberry Pi / VPS:**
-Скопируй проект на сервер, установи systemd-сервис.
-
----
-
-## Установка PWA на телефон
+## Шаг 5: Установка PWA на телефон
 
 ### iPhone (Safari)
-
-1. Открой Safari → перейди на `http://твой-ip:3000` (или домен)
-2. Нажми кнопку **Share** (квадрат со стрелкой вверх) в нижней панели
-3. Пролистай → **Add to Home Screen** (На экран «Домой»)
-4. Название: `Кеша` → **Add**
-5. На домашнем экране появится иконка — открывай как отдельное приложение
+1. Открой сайт в Safari → Share → **Add to Home Screen**
+2. Название: `Кеша` → Add
 
 ### Android (Chrome)
+1. Открой сайт в Chrome → ⋮ → **Add to Home screen**
+2. Название: `Кеша` → Add
 
-1. Открой Chrome → перейди на веб-приложение
-2. Нажми ⋮ (меню) → **Add to Home screen** (Добавить на главный экран)
-3. Название: `Кеша` → **Add**
-
-После установки приложение работает в полноэкранном режиме, как нативное. Service Worker кэширует страницы — работает офлайн для просмотра ранее загруженных данных.
+Приложение работает в полноэкранном режиме с офлайн-поддержкой.
 
 ---
 
 ## Обновление
 
 ```bash
-# Обнови код
 git pull
+cd bot && source venv/bin/activate && pip install -r requirements.txt
+cd ../web && npm install
 
-# Обнови Python-зависимости
-cd bot
-source venv/bin/activate
-pip install -r requirements.txt
-
-# Обнови веб-зависимости
-cd ../web
-npm install
-
-# Продакшн: задеплой бота на fly.io
-cd ~/Documents/FinancialTracker
-fly deploy
+# Продакшн:
+fly deploy          # бот на fly.io
+# веб авто-деплоится через Vercel при git push
 ```
-
-Если менялась структура данных Google Sheets — новые листы создадутся автоматически при первом запуске бота.
 
 ---
 
@@ -321,58 +216,73 @@ fly deploy
 ```
 FinancialTracker/
 ├── .env                    # Секреты (не коммитится)
+├── .env.example            # Шаблон без секретов (коммитится)
+├── fly.toml                # Fly.io конфиг бота
+├── CLAUDE.md               # Инструкции для AI-агентов
 ├── bot/
-│   ├── main.py             # Точка входа бота
+│   ├── main.py             # Точка входа бота (polling)
 │   ├── config.py           # Загрузка .env
-│   ├── requirements.txt    # Python-зависимости
-│   ├── categories.py       # Справочник категорий
-│   ├── sheets.py           # Google Sheets API
+│   ├── requirements.txt    # Python-зависимости (лёгкие)
+│   ├── Dockerfile          # Docker-образ для fly.io
+│   ├── categories.py       # Категории (built-in + custom)
+│   ├── sheets.py           # Google Sheets API (raw HTTP)
 │   ├── budget.py           # Бюджеты и лимиты
-│   ├── user_settings.py    # Настройки пользователя
+│   ├── user_settings.py    # Персистентные настройки
 │   ├── stickers.py         # Стикеры (312 шт.)
-│   ├── register_commands.py # Регистрация команд в Telegram
-│   ├── diagnose.py         # Диагностика
-│   ├── fetch_stickers.py   # Получение стикеров
 │   ├── responses.py        # Текстовые ответы (токсичность)
+│   ├── register_commands.py # 37 команд бота
+│   ├── diagnose.py         # Диагностика
 │   ├── handlers/           # Обработчики команд
 │   │   ├── start.py, income.py, expense.py
 │   │   ├── statistics.py, last.py, delete_command.py
 │   │   ├── budget.py, settings.py, quotes.py
 │   │   ├── stickers.py, reminder.py, set_currency.py
 │   │   ├── export_data.py, compare.py, recategorize.py
-│   │   └── add_category.py, categories.py
+│   │   ├── add_category.py, categories.py
+│   │   ├── bank.py         # Ручные банковские счета
+│   │   ├── mono_import.py  # Импорт выписки Monobank
+│   │   ├── mono_sync.py    # Синхронизация Monobank
+│   │   ├── mono_rates.py   # Курсы валют Monobank
+│   │   ├── mono_info.py    # Счета Monobank
+│   │   └── mono_day.py     # Выписка за день
 │   └── mono/               # Monobank API
-│       ├── client.py       # HTTP-клиент
-│       ├── mcc_categories.py # MCC → категория
-│       └── webhook.py      # Webhook приёмник
+│       ├── client.py       # Async HTTP-клиент с rate limiting
+│       ├── mcc_categories.py # 93 MCC кода → 18 категорий
+│       └── webhook.py      # Webhook приёмник (заглушка)
 ├── web/
 │   ├── package.json        # Node-зависимости
-│   ├── next.config.mjs     # Next.js конфиг
-│   ├── tailwind.config.ts  # Tailwind CSS конфиг
+│   ├── next.config.mjs     # Next.js 14 конфиг
+│   ├── tailwind.config.ts  # Tailwind CSS
+│   ├── vercel.json         # Vercel деплой конфиг
 │   ├── app/                # Next.js App Router
 │   │   ├── layout.tsx      # Root layout (PWA meta)
-│   │   ├── page.tsx        # Dashboard
-│   │   ├── analytics/      # Страница аналитики
+│   │   ├── page.tsx        # Дашборд
+│   │   ├── analytics/      # Аналитика (pure SVG charts)
 │   │   ├── transactions/   # История транзакций
 │   │   └── api/            # API-роуты
 │   │       ├── sheets/     # Google Sheets API
 │   │       └── mono/       # Monobank (курсы валют)
 │   ├── components/         # React-компоненты
-│   │   ├── dashboard/      # Карточки дашборда
-│   │   ├── analytics/      # Графики
+│   │   ├── dashboard/      # Карточки дашборда + MonoAccounts
+│   │   ├── analytics/      # SVG-графики (не Recharts!)
 │   │   ├── transactions/   # Таблица транзакций
 │   │   ├── layout/         # Header, BottomNav
 │   │   └── ui/             # UI-библиотека
 │   ├── lib/                # Бизнес-логика
-│   │   ├── sheets.ts       # Sheets клиент
-│   │   ├── mono.ts         # Monobank клиент
-│   │   ├── types.ts        # Типы TypeScript
-│   │   └── ...
-│   └── public/             # Статика
-│       ├── manifest.json   # PWA манифест
-│       ├── sw.js           # Service Worker
-│       └── icons/          # Иконки PWA
-└── docs/                   # Документация
-    ├── INSTALL.md          # Этот файл
-    └── USAGE.md            # Руководство пользователя
+│   │   ├── sheets.ts       # SheetsClient (googleapis)
+│   │   ├── mono.ts         # Monobank API клиент
+│   │   └── types.ts        # TypeScript типы
+│   └── public/             # Статика (manifest, sw, icons)
+├── scripts/
+│   └── Code.gs             # Google Apps Script (настройка таблицы)
+├── docs/                   # Документация
+│   ├── INSTALL.md          # Этот файл
+│   ├── DEPLOY.md           # Деплой веба на Vercel
+│   ├── DEPLOY_BOT.md       # Деплой бота на fly.io
+│   └── USAGE.md            # Руководство пользователя
+└── .planning/              # Спецификации и планы
+    ├── PROJECT.md          # Описание проекта
+    ├── ROADMAP.md          # Дорожная карта
+    ├── REQUIREMENTS.md     # Требования
+    └── STATE.md            # Текущий статус
 ```

@@ -77,9 +77,14 @@
 | `/quote_time` | Время ежедневной цитаты | `/quote_time 10:00` |
 | `/reminder` | Ежедневный итог дня | `/reminder 21:00` |
 | `/mono_import` | Импорт из Monobank | `/mono_import 7` |
+| `/mono_day` | Выписка Monobank за день | `/mono_day 25.05.2026` |
 | `/mono_info` | Счета и балансы Monobank | `/mono_info` |
 | `/mono_rates` | Курсы валют Monobank | `/mono_rates` |
 | `/mono_sync` | Синхронизация Monobank | `/mono_sync` |
+| `/banks` | Ручные банковские счета | `/banks` |
+| `/add_bank` | Добавить ручной счёт | `/add_bank Privat24 5457... 114.43 UAH` |
+| `/del_bank` | Удалить ручной счёт | `/del_bank Privat24` |
+| `/set_balance` | Обновить баланс счёта | `/set_balance Privat24 150.00` |
 
 ---
 
@@ -265,6 +270,15 @@
 - и т.д. (более 100 кодов)
 
 Если категория не определена — операция попадёт в «Другое». Потом можно перекатегоризировать через `/recategorize`.
+
+#### `/mono_day <дата> [счёт]` — выписка за день
+
+Показывает операции Monobank за конкретную дату:
+
+```
+/mono_day 25.05.2026
+/mono_day 25.05.2026 1    # только первый счёт
+```
 
 #### `/mono_info` — счета и балансы
 
