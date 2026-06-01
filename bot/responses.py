@@ -85,9 +85,16 @@ HELP_TEXT = """Ладно, объясняю ещё раз, раз без мен�
 
 🏦 <b>Monobank</b>
 <code>/mono_import 7</code> — импорт выписки
+<code>/mono_day 25.05</code> — выписка за день
 <code>/mono_info</code> — счета и балансы
 <code>/mono_rates</code> — курсы валют
 <code>/mono_sync</code> — синхронизация
+
+💳 <b>Ручные счета</b>
+<code>/banks</code> — все счета
+<code>/add_bank Название PAN сумма UAH</code> — добавить
+<code>/del_bank Название</code> — удалить
+<code>/set_balance Название 150.00</code> — баланс
 
 📋 <b>Операции</b>
 <code>/last</code> — последние 5
