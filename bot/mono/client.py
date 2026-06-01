@@ -5,7 +5,7 @@ import httpx
 from config import MONOBANK_X_TOKEN
 
 BASE_URL = "https://api.monobank.ua"
-REQUEST_INTERVAL = 60  # seconds between requests
+REQUEST_INTERVAL = 0  # client-side throttle disabled, server-side 429 handles it
 REQUEST_TIMEOUT = 10  # seconds per request
 MAX_RETRIES = 3
 
