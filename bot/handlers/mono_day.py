@@ -93,10 +93,12 @@ async def mono_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     await update.message.reply_chat_action("typing")
     status_msg = await update.message.reply_text(
-        f"🔄 Загружаю транзакции за {date_label}..."
+        f"⏳ Жду очередь Monobank API (до 60 сек)..."
     )
 
     async with MonobankClient() as client:
+        # Обновим статус перед запросом
+        await status_msg.edit_text(f"🔄 Загружаю транзакции за {date_label}...")
         try:
             client_info = await client.get_client_info()
         except MonobankError as e:

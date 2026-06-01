@@ -39,11 +39,12 @@ def currency_code_to_name(code: int) -> str:
 
 
 class MonobankClient:
-    """Async Monobank API client with rate limiting and error handling."""
+    """Async Monobank API client with global rate limiting and error handling."""
+
+    _last_request_time: float = 0.0  # class-level: shared across all instances
 
     def __init__(self, token: str | None = None):
         self._token = token or MONOBANK_X_TOKEN
-        self._last_request_time: float = 0.0
         self._client = httpx.AsyncClient(
             base_url=BASE_URL,
             timeout=httpx.Timeout(REQUEST_TIMEOUT),
@@ -132,7 +133,7 @@ class MonobankClient:
 
             # Success
             if response.is_success:
-                self._last_request_time = time.monotonic()
+                MonobankClient._last_request_time = time.monotonic()
                 return response.json()
 
             # 429 Too Many Requests — backoff
@@ -158,8 +159,8 @@ class MonobankClient:
         raise MonobankError(0, "Unexpected error in _request")
 
     async def _rate_limit(self) -> None:
-        """Ensure at least REQUEST_INTERVAL seconds between requests."""
-        elapsed = time.monotonic() - self._last_request_time
+        """Ensure at least REQUEST_INTERVAL seconds between requests (global)."""
+        elapsed = time.monotonic() - MonobankClient._last_request_time
         if elapsed < REQUEST_INTERVAL:
             await asyncio.sleep(REQUEST_INTERVAL - elapsed)
 
