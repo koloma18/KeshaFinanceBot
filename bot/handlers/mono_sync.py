@@ -1,8 +1,7 @@
 """Обработчик команды /mono_sync — докачка пропущенных транзакций Monobank.
 
 Формат: /mono_sync
-Импортирует транзакции начиная с даты последней импортированной операции.
-Если разрыв больше 31 дня — разбивает на чанки.
+Синхронизирует счета 5259 и 4454 с последней импортированной транзакции.
 """
 
 import logging
@@ -11,19 +10,20 @@ from datetime import datetime, timezone
 from mono import build_transaction_row
 from mono.client import MonobankClient, MonobankError
 from mono.mcc_categories import get_mcc_description
-from sheets import COL, add_row, find_row_by_source, get_last_mono_timestamp
+from sheets import add_row, find_row_by_source, get_last_mono_timestamp
 from telegram import Update
 from telegram.ext import ContextTypes
 
 logger = logging.getLogger(__name__)
 
 MAX_STATEMENT_DAYS = 31
-PROGRESS_INTERVAL = 10
 CHUNK_SECONDS = MAX_STATEMENT_DAYS * 86400
+
+PRIORITY_MASKS = ["5259", "4454"]
 
 
 async def mono_sync(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Докачка пропущенных транзакций Monobank."""
+    """Синхронизация счетов 5259 и 4454."""
     last_ts = get_last_mono_timestamp()
     if last_ts is None:
         await update.message.reply_text(
@@ -32,144 +32,123 @@ async def mono_sync(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     await update.message.reply_chat_action("typing")
-    status_msg = await update.message.reply_text(
-        "🔄 Синхронизирую транзакции Monobank..."
-    )
+    status_msg = await update.message.reply_text("🔄 Синхронизирую Monobank...")
 
     async with MonobankClient() as client:
         try:
             client_info = await client.get_client_info()
         except MonobankError as e:
-            logger.error("Monobank client info error: %s", e)
-            await status_msg.edit_text(
-                f"❌ Ошибка Monobank: {e.message}\n\nПроверь X-Token в настройках."
-            )
+            await status_msg.edit_text(f"❌ Ошибка: {e.message}")
             return
-        except Exception as e:
-            logger.error("Unexpected error getting client info: %s", e)
-            await status_msg.edit_text("❌ Не удалось подключиться к Monobank.")
+        except Exception:
+            await status_msg.edit_text("❌ Не удалось подключиться.")
             return
 
         accounts = client_info.get("accounts", [])
         if not accounts:
-            await status_msg.edit_text("❌ У тебя нет счетов в Monobank.")
+            await status_msg.edit_text("❌ Нет счетов.")
             return
 
-        account = accounts[0]
-        account_id = account.get("id")
-        if not account_id:
-            await status_msg.edit_text("❌ Не удалось получить ID счёта.")
+        # Найти основные счета
+        target_accounts = []
+        for mask in PRIORITY_MASKS:
+            for acc in accounts:
+                masked = (acc.get("maskedPan", [""]) or [""])[0]
+                if masked.endswith(mask):
+                    target_accounts.append(acc)
+                    break
+
+        if not target_accounts:
+            await status_msg.edit_text("❌ Счета 5259 и 4454 не найдены.")
             return
 
         now = int(datetime.now(timezone.utc).timestamp())
-        from_ts = last_ts
-        to_ts = now
+        grand_total = 0
+        grand_skipped = 0
+        grand_errors = 0
+        account_lines: list[str] = []
 
-        chunks: list[tuple[int, int]] = []
-        chunk_start = from_ts
-        while chunk_start < to_ts:
-            chunk_end = min(chunk_start + CHUNK_SECONDS, to_ts)
-            chunks.append((chunk_start, chunk_end))
-            chunk_start = chunk_end + 1
+        for account in target_accounts:
+            account_id = account.get("id")
+            if not account_id:
+                continue
+            masked = (account.get("maskedPan", ["???"]) or ["???"])[0]
 
-        all_statements: list[dict] = []
-        for chunk_idx, (c_from, c_to) in enumerate(chunks, start=1):
-            c_from_dt = datetime.fromtimestamp(c_from, tz=timezone.utc).strftime(
-                "%d.%m.%Y"
-            )
-            c_to_dt = datetime.fromtimestamp(c_to, tz=timezone.utc).strftime("%d.%m.%Y")
+            await status_msg.edit_text(f"🔄 Счёт {masked}...")
 
-            await status_msg.edit_text(
-                f"🔄 Загружаю чанк {chunk_idx}/{len(chunks)}: {c_from_dt} — {c_to_dt}"
-            )
+            # Собрать все чанки
+            chunks: list[tuple[int, int]] = []
+            chunk_start = last_ts
+            while chunk_start < now:
+                chunk_end = min(chunk_start + CHUNK_SECONDS, now)
+                chunks.append((chunk_start, chunk_end))
+                chunk_start = chunk_end + 1
 
-            try:
-                chunk_data = await client.get_statement(account_id, c_from, c_to)
-                all_statements.extend(chunk_data)
-            except MonobankError as e:
-                logger.error("Monobank statement error (chunk %s): %s", chunk_idx, e)
+            all_statements: list[dict] = []
+            for chunk_idx, (c_from, c_to) in enumerate(chunks, 1):
                 await status_msg.edit_text(
-                    f"❌ Ошибка при загрузке чанка {c_from_dt} — {c_to_dt}: {e.message}"
+                    f"🔄 {masked}: чанк {chunk_idx}/{len(chunks)}..."
                 )
-                return
-            except Exception as e:
-                logger.error("Unexpected error getting statement chunk: %s", e)
-                await status_msg.edit_text(
-                    "❌ Не удалось получить выписку. Попробуй позже."
-                )
-                return
-
-        if not all_statements:
-            last_date = datetime.fromtimestamp(last_ts, tz=timezone.utc).strftime(
-                "%d.%m.%Y"
-            )
-            await status_msg.edit_text(f"ℹ️ Новых транзакций с {last_date} нет.")
-            return
-
-        total = 0
-        skipped = 0
-        errors = 0
-        processed = 0
-
-        for tx in all_statements:
-            if tx.get("amount", 0) == 0:
-                skipped += 1
-                continue
-
-            source_key = f"mono:{tx['id']}"
-
-            try:
-                existing = find_row_by_source(source_key)
-            except Exception:
-                existing = None
-
-            if existing is not None:
-                skipped += 1
-                continue
-
-            row = build_transaction_row(tx)
-            if row is None:
-                skipped += 1
-                continue
-
-            try:
-                ok = add_row(row)
-            except Exception:
-                ok = False
-
-            if ok:
-                total += 1
-            else:
-                errors += 1
-
-            processed += 1
-
-            if processed % PROGRESS_INTERVAL == 0:
-                mcc_desc = get_mcc_description(tx.get("mcc", 0))
                 try:
-                    await status_msg.edit_text(
-                        f"🔄 Синхронизирую...\n"
-                        f"✅ Добавлено: {total}\n"
-                        f"⏭ Пропущено: {skipped}\n"
-                        f"❌ Ошибок: {errors}\n"
-                        f"\nПоследняя: {mcc_desc}"
-                    )
+                    chunk_data = await client.get_statement(account_id, c_from, c_to)
+                    all_statements.extend(chunk_data)
+                except MonobankError as e:
+                    await status_msg.edit_text(f"❌ {masked}: {e.message}")
+                    return
+
+            if not all_statements:
+                account_lines.append(f"💳 {masked}: нет новых")
+                continue
+
+            total = 0
+            skipped = 0
+            errors = 0
+            for tx in all_statements:
+                if tx.get("amount", 0) == 0:
+                    skipped += 1
+                    continue
+                source_key = f"mono:{tx['id']}"
+                try:
+                    existing = find_row_by_source(source_key)
                 except Exception:
-                    pass
+                    existing = None
+                if existing is not None:
+                    skipped += 1
+                    continue
+                row = build_transaction_row(tx)
+                if row is None:
+                    skipped += 1
+                    continue
+                try:
+                    ok = add_row(row)
+                except Exception:
+                    ok = False
+                if ok:
+                    total += 1
+                else:
+                    errors += 1
+
+            account_lines.append(
+                f"💳 {masked}: +{total}" + (f" (⏭{skipped})" if skipped else "")
+            )
+            grand_total += total
+            grand_skipped += skipped
+            grand_errors += errors
 
         last_date = datetime.fromtimestamp(last_ts, tz=timezone.utc).strftime(
             "%d.%m.%Y"
         )
         lines = [
             f"✅ <b>Синхронизация завершена</b>",
+            f"📅 С {last_date} по сегодня",
             f"",
-            f"📅 Период: с {last_date} по сегодня",
-            f"📦 Чанков загружено: {len(chunks)}",
+            *account_lines,
             f"",
-            f"📥 Добавлено: <b>{total}</b>",
-            f"⏭ Пропущено (дубликаты/нулевые): {skipped}",
+            f"📥 Всего: <b>{grand_total}</b>",
         ]
-        if errors:
-            lines.append(f"❌ Ошибок записи: {errors}")
+        if grand_skipped:
+            lines.append(f"⏭ Пропущено: {grand_skipped}")
+        if grand_errors:
+            lines.append(f"❌ Ошибок: {grand_errors}")
 
         await status_msg.edit_text("\n".join(lines), parse_mode="HTML")
