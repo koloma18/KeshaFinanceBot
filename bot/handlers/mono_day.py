@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, timezone
 
 from mono import build_transaction_row
-from mono.client import MonobankClient, MonobankError
+from mono.client import MonobankClient, MonobankError, currency_code_to_name
 from mono.mcc_categories import get_mcc_description
 from sheets import add_row, find_row_by_source
 from telegram import Update
@@ -48,12 +48,23 @@ def _parse_day(args: list[str]) -> tuple[int, int]:
 
 
 async def mono_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Выгрузка транзакций Monobank за конкретный день."""
+    """Выгрузка транзакций Monobank за конкретный день.
+    /mono_day 25 [номер_счёта]"""
     try:
         day, month = _parse_day(context.args)
     except ValueError as e:
         await update.message.reply_text(f"❌ {e}")
         return
+
+    # Второй аргумент — номер счёта (опционально)
+    account_idx = 0
+    if len(context.args) >= 2:
+        try:
+            account_idx = int(context.args[1]) - 1
+            if account_idx < 0:
+                account_idx = 0
+        except ValueError:
+            pass
 
     now = datetime.now(timezone.utc)
     year = now.year
@@ -91,7 +102,13 @@ async def mono_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             await status_msg.edit_text("❌ Нет счетов в Monobank.")
             return
 
-        account = accounts[0]
+        if account_idx >= len(accounts):
+            await status_msg.edit_text(
+                f"❌ Счёт #{account_idx + 1} не найден. У тебя {len(accounts)} счет(ов)."
+            )
+            return
+
+        account = accounts[account_idx]
         account_id = account.get("id")
         if not account_id:
             await status_msg.edit_text("❌ Не удалось получить ID счёта.")
@@ -108,7 +125,18 @@ async def mono_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             return
 
         if not statements:
-            await status_msg.edit_text(f"ℹ️ За {date_label} транзакций нет.")
+            masked = account.get("maskedPan", ["???"])[0]
+            accounts_list = "\n".join(
+                f"  {i + 1}. {a.get('maskedPan', ['???'])[0]} ({a.get('type', '?')} · {currency_code_to_name(a.get('currencyCode', 980))})"
+                for i, a in enumerate(accounts)
+            )
+            await status_msg.edit_text(
+                f"ℹ️ За {date_label} транзакций нет.\n\n"
+                f"Счёт: {masked}\n\n"
+                f"Твои счета:\n{accounts_list}\n\n"
+                f"Используй /mono_day {day}.{month:02d} <b>номер</b> чтобы выбрать другой счёт.",
+                parse_mode="HTML",
+            )
             return
 
         total = 0
