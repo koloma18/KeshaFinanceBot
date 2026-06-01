@@ -58,6 +58,15 @@ Before answering questions, check wiki first.
 
 ## Architecture Decisions
 
+### SQLite Read-Through Cache (Performance Layer)
+- SQLite на Fly.io volume как кеш-слой между ботом и Google Sheets
+- **Запись:** income/expense → Sheets (source of truth) + SQLite (cache) одновременно
+- **Чтение:** balance/last/stats → SQLite (<1ms) вместо Sheets API (~300-800ms)
+- **Monobank:** фоновый cron-job (раз в 5-10 мин) синхронит балансы в SQLite, `/balance` читает готовые данные
+- **Web:** API routes читают SQLite (или Sheets как fallback)
+- Sheets остаётся source of truth и бэкапом, SQLite — для скорости
+- Фазы: 1) SQLite cache для бота, 2) Асинхронный Monobank, 3) SQLite как первичное хранилище (опционально)
+
 ### Analytics Charts: Pure SVG, NOT Recharts
 - ❌ Recharts (~120KB) — несовместим с iOS Safari, ResponsiveContainer ломает рендеринг
 - ❌ `var(--css-var)` в SVG-атрибутах (stroke, fill) крашит iOS Safari

@@ -1,38 +1,44 @@
 # Requirements: Financial Tracker
 
 **Defined:** 2026-05-30
+**Updated:** 2026-06-01 — added PERF requirements
 **Core Value:** Автоматический учёт всех личных финансов без усилий
 
 ## v1 Requirements
 
 ### Infrastructure
-- [ ] **INFRA-01**: Google Sheets таблица как основное хранилище данных (доходы/расходы)
-- [ ] **INFRA-02**: Next.js проект с API роутами
-- [ ] **INFRA-03**: Telegram bot (python-telegram-bot) как отдельный сервис
+- [x] **INFRA-01**: Google Sheets таблица как основное хранилище данных (доходы/расходы)
+- [x] **INFRA-02**: Next.js проект с API роутами
+- [x] **INFRA-03**: Telegram bot (python-telegram-bot) как отдельный сервис
 
 ### Telegram Bot
-- [ ] **TG-01**: Бот принимает сообщение с суммой и описанием расхода
-- [ ] **TG-02**: Бот записывает данные в Google Sheets
-- [ ] **TG-03**: Бот показывает баланс по запросу
-- [ ] **TG-04**: Бот показывает расходы за день/неделю/месяц
+- [x] **TG-01**: Бот принимает сообщение с суммой и описанием расхода
+- [x] **TG-02**: Бот записывает данные в Google Sheets
+- [x] **TG-03**: Бот показывает баланс по запросу
+- [x] **TG-04**: Бот показывает расходы за день/неделю/месяц
 
 ### Web App (PWA)
-- [ ] **WEB-01**: Дашборд с суммой доходов/расходов за месяц
-- [ ] **WEB-02**: График расходов по категориям
-- [ ] **WEB-03**: История транзакций с фильтрацией
-- [ ] **WEB-04**: PWA установка на телефон
+- [x] **WEB-01**: Дашборд с суммой доходов/расходов за месяц
+- [x] **WEB-02**: График расходов по категориям
+- [x] **WEB-03**: История транзакций с фильтрацией
+- [x] **WEB-04**: PWA установка на телефон
 
 ### Monobank
-- [ ] **MONO-01**: Импорт выписки через Monobank API (когда будет токен)
-- [ ] **MONO-02**: WebHook для получения новых транзакций в реальном времени
+- [x] **MONO-01**: Импорт выписки через Monobank API
+- [ ] **MONO-02**: WebHook для получения новых транзакций в реальном времени (заглушка есть)
 
 ### Categories
-- [ ] **CAT-01**: Автоматическая категоризация по MCC коду
-- [ ] **CAT-02**: Ручная перекатегоризация через Telegram
+- [x] **CAT-01**: Автоматическая категоризация по MCC коду
+- [x] **CAT-02**: Ручная перекатегоризация через Telegram
 
 ### Budget
-- [ ] **BUDG-01**: Установка бюджетных лимитов по категориям
-- [ ] **BUDG-02**: Уведомления о превышении лимита
+- [x] **BUDG-01**: Установка бюджетных лимитов по категориям
+- [x] **BUDG-02**: Уведомления о превышении лимита
+
+### Performance (NEW — Phase 5)
+- [ ] **PERF-01**: SQLite read-through cache — все команды чтения (<1ms вместо ~500ms Sheets API)
+- [ ] **PERF-02**: Фоновый Monobank sync (cron 5-10 min) — /balance не ждёт Monobank API
+- [ ] **PERF-03**: Web API routes читают SQLite (Sheets как fallback)
 
 ## v2 Requirements
 - Маркетинг и название, логотип, дизайн
@@ -50,28 +56,32 @@
 ## Traceability
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | Phase 1 | Pending |
-| INFRA-02 | Phase 1 | Pending |
-| INFRA-03 | Phase 1 | Pending |
-| TG-01 | Phase 1 | Pending |
-| TG-02 | Phase 1 | Pending |
-| TG-03 | Phase 1 | Pending |
-| TG-04 | Phase 1 | Pending |
-| WEB-01 | Phase 2 | Pending |
-| WEB-02 | Phase 2 | Pending |
-| WEB-03 | Phase 2 | Pending |
-| WEB-04 | Phase 2 | Pending |
-| MONO-01 | Phase 3 | Pending |
-| MONO-02 | Phase 3 | Pending |
-| CAT-01 | Phase 3 | Pending |
-| CAT-02 | Phase 1 | Pending |
-| BUDG-01 | Phase 4 | Pending |
-| BUDG-02 | Phase 4 | Pending |
+| INFRA-01 | Phase 1 | ✅ Done |
+| INFRA-02 | Phase 1 | ✅ Done |
+| INFRA-03 | Phase 1 | ✅ Done |
+| TG-01 | Phase 1 | ✅ Done |
+| TG-02 | Phase 1 | ✅ Done |
+| TG-03 | Phase 1 | ✅ Done |
+| TG-04 | Phase 1 | ✅ Done |
+| WEB-01 | Phase 3 | ✅ Done |
+| WEB-02 | Phase 3 | ✅ Done |
+| WEB-03 | Phase 3 | ✅ Done |
+| WEB-04 | Phase 3 | ✅ Done |
+| MONO-01 | Phase 4 | ✅ Done |
+| MONO-02 | Phase 4 | Заглушка |
+| CAT-01 | Phase 4 | ✅ Done |
+| CAT-02 | Phase 1 | ✅ Done |
+| BUDG-01 | Phase 2 | ✅ Done |
+| BUDG-02 | Phase 2 | ✅ Done |
+| PERF-01 | Phase 5 | 🔄 In Progress |
+| PERF-02 | Phase 5 | 🔄 In Progress |
+| PERF-03 | Phase 5 | 🔄 In Progress |
 
 **Coverage:**
-- v1 requirements: 17 total
-- Mapped to phases: 17
-- Unmapped: 0 ✓
+- v1 requirements: 20 total
+- Done: 17
+- In Progress: 3
+- Not started: 0
 
 ---
-*Requirements defined: 2026-05-30*
+*Requirements defined: 2026-05-30 | Updated: 2026-06-01*

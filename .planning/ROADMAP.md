@@ -1,6 +1,6 @@
 # Roadmap: Financial Tracker
 
-## Phase 1: Core Telegram Bot + Google Sheets
+## Phase 1: Core Telegram Bot + Google Sheets ✅
 
 **Цель:** Минимальный бот для записи доходов/расходов, базовой статистики и Google Sheets как хранилище.
 
@@ -17,7 +17,7 @@
 - Персонаж: бурчливый, мат, эмодзи, разные ответы
 - Кнопки и inline-меню
 
-## Phase 2: Budget + Limits + Quotes + Stickers
+## Phase 2: Budget + Limits + Quotes + Stickers ✅
 
 **Цель:** Бюджетирование, лимиты по категориям, цитаты дня, стикеры.
 
@@ -33,7 +33,7 @@
 - Экспорт (CSV, Excel, Google Sheets)
 - Ежедневные напоминания
 
-## Phase 3: Web App (PWA)
+## Phase 3: Web App (PWA) ✅
 
 **Цель:** Веб-приложение с дашбордом и аналитикой.
 
@@ -45,7 +45,7 @@
 - История с фильтрацией
 - Установка на телефон
 
-## Phase 4: Monobank Integration
+## Phase 4: Monobank Integration ✅
 
 **Цель:** Автоматический импорт транзакций из Monobank.
 
@@ -56,7 +56,20 @@
 - WebHook для реального времени
 - Автоматическая категоризация по MCC
 
-## Phase 5: Marketing & Monetization
+## Phase 5: Performance — SQLite Caching 🔄
+
+**Цель:** Мгновенные ответы бота, независимость от Google Sheets latency.
+
+**Requirements:** PERF-01, PERF-02, PERF-03
+
+**Deliverables:**
+- SQLite read-through cache между ботом и Sheets
+- Запись в Sheets + SQLite одновременно, чтение из SQLite (<1ms)
+- Фоновый cron для Monobank sync (раз в 5-10 мин)
+- Кеширование /balance, /last, /today, /week, /month
+- Web API routes тоже читают из SQLite
+
+## Phase 6: Marketing & Monetization
 
 **Цель:** Название, брендинг, возможность платного доступа.
 
