@@ -1,0 +1,162 @@
+<h2>Кеша — текущее состояние vs. улучшения</h2>
+<p class="subtitle">Аудит показал: большинство хардкоженных цветов уже исправлено. Вот что осталось.</p>
+
+<div class="section">
+  <h3>🎨 Проблема 1: PIE_COLORS — статические hex в CategoryPieChart</h3>
+  <p class="subtitle">Цвета не адаптируются под светлую тему. Справа — вариант с CSS-переменными.</p>
+
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">Сейчас — хардкод #hex</div>
+      <div class="mockup-body" style="padding:16px;background:var(--mock-bg, #020617);border-radius:8px;">
+        <p style="color:#f1f5f9;font-size:14px;margin-bottom:12px;font-weight:600;">Расходы по категориям</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span style="background:#f87171;color:white;padding:4px 10px;border-radius:12px;font-size:11px;">Еда 42%</span>
+          <span style="background:#fb923c;color:white;padding:4px 10px;border-radius:12px;font-size:11px;">Транспорт 28%</span>
+          <span style="background:#fbbf24;color:white;padding:4px 10px;border-radius:12px;font-size:11px;">Жильё 18%</span>
+          <span style="background:#a3e635;color:white;padding:4px 10px;border-radius:12px;font-size:11px;">Развлечения 12%</span>
+        </div>
+        <p style="color:#64748b;font-size:11px;margin-top:12px;">❌ При светлой теме: красный на белом — слишком ярко</p>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Улучшение — CSS-переменные</div>
+      <div class="mockup-body" style="padding:16px;background:#f8fafc;border-radius:8px;">
+        <p style="color:#0f172a;font-size:14px;margin-bottom:12px;font-weight:600;">Расходы по категориям</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span style="background:#dc2626;color:white;padding:4px 10px;border-radius:12px;font-size:11px;">Еда 42%</span>
+          <span style="background:#d97706;color:white;padding:4px 10px;border-radius:12px;font-size:11px;">Транспорт 28%</span>
+          <span style="background:#ca8a04;color:white;padding:4px 10px;border-radius:12px;font-size:11px;">Жильё 18%</span>
+          <span style="background:#4f46e5;color:white;padding:4px 10px;border-radius:12px;font-size:11px;">Развлечения 12%</span>
+        </div>
+        <p style="color:#475569;font-size:11px;margin-top:12px;">✅ Адаптивные цвета: темнее в светлой теме, ярче в тёмной</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🃏 Проблема 2: Card padding не в 8px grid</h3>
+  <p class="subtitle">CardHeader использует px-5 (20px) вместо p-4 (16px). Нарушает ритм.</p>
+
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">Сейчас: px-5 pt-5 pb-3</div>
+      <div class="mockup-body" style="padding:0;background:#020617;border-radius:12px;">
+        <div style="border:2px dashed #ef4444;margin:8px;border-radius:8px;padding:20px 20px 12px 20px;background:#1e293b;">
+          <p style="color:#f1f5f9;font-size:14px;font-weight:600;">📊 Бюджет месяца</p>
+          <div style="background:#334155;height:8px;border-radius:4px;margin-top:12px;">
+            <div style="background:#fbbf24;height:8px;border-radius:4px;width:65%;"></div>
+          </div>
+          <p style="color:#34d399;font-size:13px;margin-top:8px;">Осталось 3 500 ₴</p>
+        </div>
+        <p style="color:#f87171;font-size:10px;text-align:center;margin-top:4px;">⬆ 20px / ⬇ 12px — вне сетки {4,8,16,24,32}</p>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Должно быть: p-4 (16px)</div>
+      <div class="mockup-body" style="padding:0;background:#020617;border-radius:12px;">
+        <div style="border:2px dashed #34d399;margin:8px;border-radius:8px;padding:16px;background:#1e293b;">
+          <p style="color:#f1f5f9;font-size:14px;font-weight:600;">📊 Бюджет месяца</p>
+          <div style="background:#334155;height:8px;border-radius:4px;margin-top:16px;">
+            <div style="background:#fbbf24;height:8px;border-radius:4px;width:65%;"></div>
+          </div>
+          <p style="color:#34d399;font-size:13px;margin-top:8px;">Осталось 3 500 ₴</p>
+        </div>
+        <p style="color:#34d399;font-size:10px;text-align:center;margin-top:4px;">✅ 16px со всех сторон — чистая сетка</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🐿️ Проблема 3: Кеша не везде</h3>
+  <p class="subtitle">Принцип №1 — «Кеша везде». Но на странице аналитики персонаж молчит.</p>
+
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">Сейчас: без Кеши</div>
+      <div class="mockup-body" style="padding:16px;background:#020617;border-radius:8px;">
+        <p style="color:#f1f5f9;font-size:16px;font-weight:700;margin-bottom:16px;">Аналитика</p>
+        <div style="background:#1e293b;border-radius:8px;padding:12px;margin-bottom:8px;">
+          <p style="color:#94a3b8;font-size:12px;">Доход</p>
+          <p style="color:#34d399;font-size:18px;font-weight:600;">+45 200 ₴</p>
+        </div>
+        <div style="background:#1e293b;border-radius:8px;padding:12px;margin-bottom:8px;">
+          <p style="color:#94a3b8;font-size:12px;">Расход</p>
+          <p style="color:#f87171;font-size:18px;font-weight:600;">-22 800 ₴</p>
+        </div>
+        <p style="color:#94a3b8;font-size:11px;margin-top:12px;">😶 Просто цифры. Сухо.</p>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Улучшение: с Кешей</div>
+      <div class="mockup-body" style="padding:16px;background:#020617;border-radius:8px;">
+        <p style="color:#f1f5f9;font-size:16px;font-weight:700;margin-bottom:8px;">Аналитика</p>
+        <p style="color:#fbbf24;font-size:12px;margin-bottom:16px;font-style:italic;">🐿️ «Ты потратил вдвое меньше, чем заработал. Кеша гордится. Почти.»</p>
+        <div style="background:#1e293b;border-radius:8px;padding:12px;margin-bottom:8px;">
+          <p style="color:#94a3b8;font-size:12px;">Доход</p>
+          <p style="color:#34d399;font-size:18px;font-weight:600;">+45 200 ₴</p>
+        </div>
+        <div style="background:#1e293b;border-radius:8px;padding:12px;margin-bottom:8px;">
+          <p style="color:#94a3b8;font-size:12px;">Расход</p>
+          <p style="color:#f87171;font-size:18px;font-weight:600;">-22 800 ₴</p>
+        </div>
+        <p style="color:#fbbf24;font-size:11px;margin-top:12px;">🐿️ Персонаж даёт контекст → warm and personal</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>✨ Что уже исправлено (молодцы!)</h3>
+  <p class="subtitle">Эти компоненты перешли на kesha-* токены и выглядят отлично:</p>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>✅ Готово</h4>
+      <ul>
+        <li>BalanceCard — kesha-income/expense ✅</li>
+        <li>DailyStatsCard — kesha-border/text ✅</li>
+        <li>BudgetCard — kesha-text-* ✅</li>
+        <li>TransactionTable — kesha-border/hover ✅</li>
+        <li>MonthlyChart — CSS-переменные ✅</li>
+        <li>AnalyticsPage — kesha-accent-bg ✅</li>
+        <li>RecentTransactions — divide-kesha ✅</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>🔧 Осталось</h4>
+      <ul>
+        <li>PIE_COLORS — статические hex</li>
+        <li>Card padding — не в сетке</li>
+        <li>Кеша на страницах аналитики</li>
+        <li>Слоган в UI</li>
+        <li>Ленивая загрузка Recharts</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Фикс PIE_COLORS + Card padding</h3>
+      <p>Быстрые технические правки. 2 файла, ~15 минут.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Всё сразу: PIE_COLORS + Card + Кеша на всех страницах</h3>
+      <p>Полный пакет улучшений. 5+ файлов, ~45 минут.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Только добавить Кешу на страницы где его нет</h3>
+      <p>Фокус на personality. Analytics, Transactions — добавить цитаты персонажа.</p>
+    </div>
+  </div>
+</div>

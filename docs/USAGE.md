@@ -85,6 +85,12 @@
 | `/add_bank` | Добавить ручной счёт | `/add_bank Privat24 5457... 114.43 UAH` |
 | `/del_bank` | Удалить ручной счёт | `/del_bank Privat24` |
 | `/set_balance` | Обновить баланс счёта | `/set_balance Privat24 150.00` |
+| `/recurring_add` | Добавить регулярный платёж | `/recurring_add expense 20000 UAH fixed ...` |
+| `/recurring_list` | Список регулярных платежей | `/recurring_list` |
+| `/recurring_pause` | Пауза регулярного платежа | `/recurring_pause rent-flat` |
+| `/recurring_resume` | Возобновить платёж | `/recurring_resume rent-flat` |
+| `/recurring_delete` | Удалить регулярный платёж | `/recurring_delete rent-flat` |
+| `/recurring_due` | Платежи к оплате сегодня | `/recurring_due` |
 
 ---
 
@@ -457,6 +463,18 @@ EUR → UAH: 45.20 / 45.60
 
 Новая категория сразу появляется в кнопках меню и доступна для выбора.
 
+#### Цвета категорий
+
+Цвета хранятся в листе **Categories** (колонка C — `Color`).
+
+Чтобы задать цвет новой категории:
+1. Открыть лист `Categories` в Google Таблице
+2. Найти строку с нужной категорией
+3. В колонку `Color` вписать HEX-код, например `#BBDEFB`
+4. Запустить `🧮 Kesha → 🎨 Применить цвета` (или `setupSheetsSafe()`)
+
+Без указания цвета категория будет закрашена серым (`#F5F5F5`).
+
 #### `/recategorize` — сменить категорию
 
 Если операция записалась в неправильную категорию:
@@ -514,6 +532,120 @@ EUR → UAH: 45.20 / 45.60
 ```csv
 Month,Date,Type,Amount UAH,Amount USD,Amount EUR,Category,Comment,Source
 June,15.06.2026,expense,350,,,Кофе,капучино,manual
+```
+
+---
+
+### Регулярные платежи и подписки (`/recurring_*`)
+
+Управление повторяющимися платежами: аренда, коммунальные, подписки (Apple, OpenAI и др.). Три режима суммы: фиксированная, переменная и в иностранной валюте.
+
+#### `/recurring_add` — Добавление
+
+**Fixed UAH:**
+```
+/recurring_add expense 20000 UAH fixed Дом "Аренда квартиры" monthly 3 --grace 4 --pay cash-uah,card-office,card-main --id rent-flat
+```
+
+**Variable:**
+```
+/recurring_add expense variable UAH Дом "Коммунальные" monthly 4 --grace 4 --pay cash-uah,card-office,card-main --id utilities
+```
+
+**FX subscription:**
+```
+/recurring_add expense 2.49 USD fx Подписки "Apple" monthly 27 карта --estimate 110.64 --id subscription-apple
+/recurring_add expense 23.80 USD fx Подписки "OpenAI" monthly 12 карта --estimate 1052.86 --id subscription-openai
+```
+
+Опции `--id`, `--grace`, `--pay`, `--estimate` — опциональны. Алиасы счетов (`карта`, `наличка`, `mono`) резолвятся автоматически.
+
+#### `/recurring_list` — Список
+
+Показывает активные и paused платежи (удалённые скрыты).
+
+#### `/recurring_pause <id>` / `/recurring_resume <id>`
+
+Пауза и возобновление регулярного платежа по ID.
+
+#### `/recurring_delete <id>`
+
+Soft-delete: статус меняется на deleted, данные сохраняются.
+
+#### `/recurring_due` — Платежи сегодня (интерактивный)
+
+Показывает регулярные платежи с кнопками действий. Если due items нет — сообщает об отсутствии. Если есть — отправляет отдельную карточку для каждого платежа с кнопками.
+
+**Fixed flow (аренда, WayForPay):**
+
+Бот показывает карточку:
+```
+🏠 Плановый платёж: Аренда квартиры
+Сумма: 20 000 UAH
+Категория: Дом
+Оплатить: 3-го числа (ежемесячно)
+Можно до: 4-го числа
+
+[💵 Наличными] [🏢 Офисная карта] [💳 Личная Monobank]
+[⏭ Пропустить]
+```
+
+При выборе счёта бот:
+- Создаёт строку в Transactions (Source = `recurring:rent-flat`)
+- Обновляет LastRunDate = сегодня, NextRunDate = следующий месяц
+- LastAction = paid
+
+**Variable flow (коммунальные):**
+
+```
+💡 Коммунальные
+Сумма каждый месяц разная.
+Нужно оплатить до 4-го числа.
+
+[✍️ Ввести сумму] [⏭ Пропустить]
+```
+
+После «Ввести сумму» бот ждёт число:
+```
+Введи сумму в UAH числом (например, 2750):
+```
+Потом показывает выбор способа оплаты. После выбора создаёт транзакцию.
+
+Важно: pending amount flow имеет приоритет над NLP-парсером — текст с суммой не интерпретируется как обычная транзакция.
+
+**FX subscription flow (Apple/OpenAI):**
+
+```
+📱 Подписка: Apple
+Оригинал: 2.49 USD
+Ориентир: ~111 UAH
+Курс может отличаться.
+
+[✅ Записать по ориентиру] [✍️ Ввести фактическую UAH]
+[⏭ Пропустить]
+```
+
+- «Записать по ориентиру» — использует EstimatedUAH (AI Comment: `Apple · 2.49 USD · estimated`)
+- «Ввести фактическую UAH» — ждёт сумму, записывает фактическую (AI Comment: `Apple · 2.49 USD`)
+
+**Skip flow:**
+```
+⏭ Пропущено. Следующее напоминание: 2026-07-03
+```
+Не создаёт транзакцию. NextRunDate = следующий период. LastAction = skipped.
+
+**Overdue:**
+
+Если today > GraceUntilDay, в начале карточки:
+```
+⚠️ Просрочено с 4-го числа
+```
+
+**Примеры полных команд с --pay:**
+```
+/recurring_add expense 20000 UAH fixed Дом "Аренда квартиры" monthly 3 --grace 4 --pay cash-uah,card-office,card-main
+/recurring_add expense variable UAH Дом "Коммунальные" monthly 4 --grace 4 --pay cash-uah,card-office,card-main
+/recurring_add expense 2.49 USD fx Подписки "Apple" monthly 27 карта --estimate 110.64
 ```
 
 ---

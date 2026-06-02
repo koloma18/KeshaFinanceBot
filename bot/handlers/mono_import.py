@@ -5,11 +5,11 @@
 """
 
 import logging
+from datetime import datetime, timezone
 
 from mono import build_transaction_row
-from mono.client import MonobankClient, MonobankError, currency_code_to_name
-from mono.mcc_categories import get_mcc_description
-from sheets import COL, add_row, find_row_by_source
+from mono.client import MonobankClient, MonobankError
+from sheets import add_row, get_existing_source_keys
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 MAX_DAYS = 31
 DEFAULT_DAYS = 7
-PROGRESS_INTERVAL = 10
 
 
 def _parse_days(args: list[str]) -> int:
@@ -75,7 +74,7 @@ async def mono_import(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             await status_msg.edit_text("❌ У тебя нет счетов в Monobank.")
             return
 
-        # Основные счета: 5259 и 4454
+        # Основной счёт: 5259 (личный). 4454 — офисный, не импортируем.
         PRIORITY_MASKS = ["5259"]
         target_accounts = []
         for mask in PRIORITY_MASKS:
@@ -86,11 +85,13 @@ async def mono_import(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     break
 
         if not target_accounts:
-            await status_msg.edit_text("❌ Счета 5259 и 4454 не найдены.")
+            await status_msg.edit_text("❌ Счёт 5259 не найден.")
             return
 
         now = int(datetime.now(timezone.utc).timestamp())
         from_ts = now - days * 86400
+
+        existing_keys = get_existing_source_keys()
 
         grand_total = 0
         grand_skipped = 0
@@ -126,11 +127,7 @@ async def mono_import(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     skipped += 1
                     continue
                 source_key = f"mono:{tx['id']}"
-                try:
-                    existing = find_row_by_source(source_key)
-                except Exception:
-                    existing = None
-                if existing is not None:
+                if source_key in existing_keys:
                     skipped += 1
                     continue
                 row = build_transaction_row(tx)

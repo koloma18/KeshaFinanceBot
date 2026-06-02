@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from mono import build_transaction_row
 from mono.client import MonobankClient, MonobankError, currency_code_to_name
 from mono.mcc_categories import get_mcc_description
-from sheets import add_row, find_row_by_source
+from sheets import add_row, get_existing_source_keys
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -155,6 +155,8 @@ async def mono_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             )
             return
 
+        existing_keys = get_existing_source_keys()
+
         total = 0
         skipped = 0
         errors = 0
@@ -168,12 +170,7 @@ async def mono_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 continue
 
             source_key = f"mono:{tx['id']}"
-            try:
-                existing = find_row_by_source(source_key)
-            except Exception:
-                existing = None
-
-            if existing is not None:
+            if source_key in existing_keys:
                 skipped += 1
                 continue
 

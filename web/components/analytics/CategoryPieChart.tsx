@@ -65,7 +65,7 @@ export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
             : tx.amountEur !== ""
               ? tx.amountEur
               : 0;
-      m[tx.category] = (m[tx.category] || 0) + a;
+      m[tx.category] = (m[tx.category] || 0) + Math.abs(a);
     }
     const total = Object.values(m).reduce((s, v) => s + v, 0);
     return Object.entries(m)

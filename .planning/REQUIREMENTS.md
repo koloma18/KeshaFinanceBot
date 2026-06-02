@@ -35,10 +35,17 @@
 - [x] **BUDG-01**: Установка бюджетных лимитов по категориям
 - [x] **BUDG-02**: Уведомления о превышении лимита
 
-### Performance (NEW — Phase 5)
+### Performance (Phase 5)
 - [ ] **PERF-01**: SQLite read-through cache — все команды чтения (<1ms вместо ~500ms Sheets API)
 - [ ] **PERF-02**: Фоновый Monobank sync (cron 5-10 min) — /balance не ждёт Monobank API
 - [ ] **PERF-03**: Web API routes читают SQLite (Sheets как fallback)
+
+### Recurring Payments & Subscriptions (NEW — Phase 6)
+- [ ] **RECUR-01**: Multi-currency recurring model — лист Recurring с тремя AmountMode (fixed/variable/fx), поддержка USD/EUR/UAH/USDT
+- [ ] **RECUR-02**: Bot commands — /recurring_add, /recurring_list, /recurring_due, /recurring_pay, /recurring_pause, /recurring_delete, /recurring_edit
+- [ ] **RECUR-03**: Integration with Transactions — Source = recurring:ID, AI Comment = title + original currency, A:L не расширяется
+- [ ] **RECUR-04**: Google Sheets & Apps Script — Recurring sheet, CRUD API, setupSheetsSafe обновлён
+- [ ] **RECUR-05**: Test coverage — fx-подписки (Apple/OpenAI), fixed (WayForPay/Аренда), variable (Boosty.to/Коммунальные), parser
 
 ## v2 Requirements
 - Маркетинг и название, логотип, дизайн
@@ -76,12 +83,17 @@
 | PERF-01 | Phase 5 | 🔄 In Progress |
 | PERF-02 | Phase 5 | 🔄 In Progress |
 | PERF-03 | Phase 5 | 🔄 In Progress |
+| RECUR-01 | Phase 6 | ⬜ Not started |
+| RECUR-02 | Phase 6 | ⬜ Not started |
+| RECUR-03 | Phase 6 | ⬜ Not started |
+| RECUR-04 | Phase 6 | ⬜ Not started |
+| RECUR-05 | Phase 6 | ⬜ Not started |
 
 **Coverage:**
-- v1 requirements: 20 total
+- v1 requirements: 25 total
 - Done: 17
 - In Progress: 3
-- Not started: 0
+- Not started: 5
 
 ---
-*Requirements defined: 2026-05-30 | Updated: 2026-06-01*
+*Requirements defined: 2026-05-30 | Updated: 2026-06-02*

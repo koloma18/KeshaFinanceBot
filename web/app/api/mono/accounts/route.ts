@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
-import { getClientInfo, currencyCodeToName, monoAmountToFloat } from "@/lib/mono";
+import {
+  getClientInfo,
+  currencyCodeToName,
+  monoAmountToFloat,
+} from "@/lib/mono";
 
 export async function GET() {
   const token = process.env.MONOBANK_X_TOKEN;
   if (!token) {
-    return NextResponse.json({ error: "Monobank token not configured" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Monobank token not configured" },
+      { status: 500 },
+    );
   }
 
   try {
@@ -16,7 +23,6 @@ export async function GET() {
       currency: currencyCodeToName(a.currencyCode),
       maskedPan: a.maskedPan?.[0] ?? "***",
       type: a.type,
-      iban: a.iban,
     }));
     return NextResponse.json(formatted);
   } catch (err) {

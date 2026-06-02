@@ -63,7 +63,7 @@ export default function AnalyticsPage() {
               : 0;
 
       if (tx.type === "income") income += amount;
-      else expense += amount;
+      else if (tx.type === "expense") expense += Math.abs(amount);
     }
 
     return { income: Math.round(income), expense: Math.round(expense) };

@@ -2,8 +2,16 @@ import html
 import logging
 from datetime import datetime
 
+from categories import (
+    EXPENSE_CATEGORIES_DISPLAY,
+    INCOME_CATEGORIES_DISPLAY,
+    get_all_expense_categories,
+    get_all_income_categories,
+    normalize_category,
+)
 from config import BOT_TOKEN
 from handlers.add_category import add_category_command
+from handlers.bank import add_bank, banks_list, del_bank, set_balance
 from handlers.budget import (
     budget_command,
     limit_alerts_command,
@@ -12,7 +20,7 @@ from handlers.budget import (
 )
 from handlers.categories import categories
 from handlers.compare import compare_command, top_command
-from handlers.delete_command import delete_command
+from handlers.delete_command import delete_command, delete_confirm_callback
 from handlers.expense import expense_callback, expense_command, expense_text
 from handlers.export_data import export_command
 from handlers.income import income_callback, income_command, income_text
@@ -24,12 +32,23 @@ from handlers.mono_rates import mono_rates
 from handlers.mono_sync import mono_sync
 from handlers.quotes import quote_command, quote_time_command
 from handlers.recategorize import recategorize_command
+from handlers.recurring import (
+    recurring_add,
+    recurring_callback,
+    recurring_delete,
+    recurring_due,
+    recurring_list,
+    recurring_pause,
+    recurring_resume,
+)
 from handlers.reminder import reminder_command
+from handlers.rules import add_rule_command, delete_rule_command, rules_command
 from handlers.set_currency import set_currency_command
 from handlers.settings import settings, settings_callback
 from handlers.start import help_callback, help_command, start
 from handlers.statistics import balance, month, today, week
 from handlers.stickers import stickers_callback, stickers_command
+from parser import parse_message
 from register_commands import COMMANDS as BOT_COMMANDS
 from sheets import COL, get_all_rows
 from sheets import get_balance as sheets_balance
@@ -43,6 +62,7 @@ from telegram.ext import (
     ApplicationBuilder,
     CallbackQueryHandler,
     CommandHandler,
+    ContextTypes,
     MessageHandler,
     filters,
 )
@@ -63,6 +83,15 @@ TOXICITY_LABELS = {
     "hard": "😈 Жёсткий",
     "random": "🎲 Случайный",
 }
+
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Global handler for unhandled exceptions."""
+    logger.error("Unhandled: %s", context.error, exc_info=context.error)
+    if update and hasattr(update, "effective_message"):
+        msg = update.effective_message
+        if msg:
+            await msg.reply_text("❌ Что-то пошло не так. Попробуй /start.")
 
 
 async def menu_callback(update: Update, context):
@@ -441,10 +470,259 @@ async def _show_profanity_menu(update: Update, context) -> None:
 async def handle_text(update: Update, context):
     if context.user_data.get("income_step"):
         await income_text(update, context)
-    elif context.user_data.get("expense_step"):
+        return
+    if context.user_data.get("expense_step"):
         await expense_text(update, context)
+        return
+
+    # ── Pending recurring amount has priority over NLP parser ──────────
+    if context.user_data.get("pending_recurring"):
+        from handlers.recurring import handle_recurring_amount
+
+        handled = await handle_recurring_amount(update, context)
+        if handled:
+            return
+
+    text = update.message.text.strip()
+
+    from sheets import get_rules as sheets_get_rules
+
+    user_rules = sheets_get_rules()
+
+    parsed = parse_message(
+        text,
+        expense_categories=get_all_expense_categories(),
+        income_categories=get_all_income_categories(),
+        user_rules=user_rules,
+    )
+
+    if parsed:
+        context.user_data["nlp_tx"] = parsed
+        await _show_nlp_confirmation(update, parsed)
     else:
         await update.message.reply_text("Не понял. Напиши /help чтобы увидеть команды.")
+
+
+def _format_account_display(account_id: str | None, account_name: str | None) -> str:
+    """Format account display: '💳 Название' or '💳 ID: Название' if ID provided."""
+    if not account_name:
+        return ""
+    if account_id:
+        return f"💳 {account_id}: {account_name}"
+    return f"💳 {account_name}"
+
+
+async def _show_nlp_confirmation(update: Update, parsed) -> None:
+    """Show confirmation card with inline buttons."""
+    if parsed.is_transfer():
+        from_display = _format_account_display(
+            parsed.transfer_from_id, parsed.transfer_from
+        )
+        to_display = _format_account_display(parsed.transfer_to_id, parsed.transfer_to)
+        lines = [
+            f"🔄 <b>Перевод:</b> <code>{parsed.amount:,.0f}</code>",
+            f"{from_display} → {to_display}",
+        ]
+    else:
+        emoji = "💰" if parsed.type == "income" else "💸"
+        sign = "+" if parsed.type == "income" else "-"
+        cat_display = html.escape(parsed.category) if parsed.category else "Другое"
+
+        lines = [
+            f"{emoji} <b>{'Доход' if parsed.type == 'income' else 'Расход'}:</b> <code>{sign}{parsed.amount:,.0f}</code>",
+            f"Категория: <b>{cat_display}</b>",
+        ]
+        if parsed.comment:
+            lines.append(f"Комментарий: {html.escape(parsed.comment)}")
+        if parsed.date == "yesterday":
+            lines.append("📅 Дата: вчера")
+        if parsed.account_name:
+            lines.append(
+                _format_account_display(parsed.account_id, parsed.account_name)
+            )
+
+    keyboard = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("✅ Записать", callback_data="nlp_confirm"),
+                InlineKeyboardButton(
+                    "✏️ Изменить категорию", callback_data="nlp_change_cat"
+                ),
+                InlineKeyboardButton("❌ Отмена", callback_data="nlp_cancel"),
+            ]
+        ]
+    )
+
+    await update.message.reply_html("\n".join(lines), reply_markup=keyboard)
+
+
+async def nlp_callback(update: Update, context):
+    """Handle NLP confirmation callbacks."""
+    query = update.callback_query
+    await query.answer()
+    data = query.data
+    parsed = context.user_data.get("nlp_tx")
+
+    if not parsed:
+        await query.edit_message_text("⏳ Сессия истекла. Отправь новое сообщение.")
+        return
+
+    if data == "nlp_confirm":
+        await _nlp_save_transaction(update, context, parsed)
+
+    elif data == "nlp_cancel":
+        context.user_data.pop("nlp_tx", None)
+        await query.edit_message_text("❌ Отменено. Живём дальше.")
+
+    elif data == "nlp_change_cat":
+        cats = (
+            get_all_income_categories()
+            if parsed.type == "income"
+            else get_all_expense_categories()
+        )
+        keyboard = [
+            [InlineKeyboardButton(cat, callback_data=f"nlp_cat_{cat}")] for cat in cats
+        ]
+        keyboard.append([InlineKeyboardButton("🔙 Назад", callback_data="nlp_back")])
+        await query.edit_message_text(
+            "Выбери категорию:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+
+    elif data == "nlp_back":
+        await _show_nlp_confirmation_edit(update, parsed)
+
+    elif data.startswith("nlp_cat_"):
+        new_cat = data.replace("nlp_cat_", "")
+        parsed.category = new_cat
+        context.user_data["nlp_tx"] = parsed
+        await _show_nlp_confirmation_edit(update, parsed)
+
+
+async def _show_nlp_confirmation_edit(update, parsed) -> None:
+    """Re-show confirmation after editing (edits the existing message)."""
+    query = update.callback_query
+
+    if parsed.is_transfer():
+        from_display = _format_account_display(
+            parsed.transfer_from_id, parsed.transfer_from
+        )
+        to_display = _format_account_display(parsed.transfer_to_id, parsed.transfer_to)
+        lines = [
+            f"🔄 <b>Перевод:</b> <code>{parsed.amount:,.0f}</code>",
+            f"{from_display} → {to_display}",
+        ]
+    else:
+        emoji = "💰" if parsed.type == "income" else "💸"
+        sign = "+" if parsed.type == "income" else "-"
+        cat_display = html.escape(parsed.category) if parsed.category else "Другое"
+
+        lines = [
+            f"{emoji} <b>{'Доход' if parsed.type == 'income' else 'Расход'}:</b> <code>{sign}{parsed.amount:,.0f}</code>",
+            f"Категория: <b>{cat_display}</b>",
+        ]
+        if parsed.comment:
+            lines.append(f"Комментарий: {html.escape(parsed.comment)}")
+        if parsed.date == "yesterday":
+            lines.append("📅 Дата: вчера")
+        if parsed.account_name:
+            lines.append(
+                _format_account_display(parsed.account_id, parsed.account_name)
+            )
+
+    keyboard = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("✅ Записать", callback_data="nlp_confirm"),
+                InlineKeyboardButton(
+                    "✏️ Изменить категорию", callback_data="nlp_change_cat"
+                ),
+                InlineKeyboardButton("❌ Отмена", callback_data="nlp_cancel"),
+            ]
+        ]
+    )
+
+    await query.edit_message_text(
+        "\n".join(lines), parse_mode="HTML", reply_markup=keyboard
+    )
+
+
+async def _nlp_save_transaction(update, context, parsed) -> None:
+    """Save the parsed transaction to Google Sheets."""
+    query = update.callback_query
+
+    from budget import BudgetManager
+    from sheets import add_row, add_transfer_rows
+
+    # ── Transfers: two linked rows ────────────────────────────────────
+    if parsed.is_transfer():
+        outflow, inflow, tid = parsed.to_transfer_rows()
+
+        if parsed.date == "yesterday":
+            from datetime import datetime as dt
+            from datetime import timedelta
+
+            yesterday = dt.now() - timedelta(days=1)
+            month_name = yesterday.strftime("%B")
+            date_str = yesterday.strftime("%d.%m.%Y")
+            outflow[0] = month_name
+            outflow[1] = date_str
+            inflow[0] = month_name
+            inflow[1] = date_str
+
+        success = add_transfer_rows(outflow, inflow, tid)
+
+        if not success:
+            await query.edit_message_text(
+                "Не могу записать в таблицу. Google Sheets не отвечает."
+            )
+            context.user_data.pop("nlp_tx", None)
+            return
+
+        BudgetManager.invalidate_after_transaction()
+
+        await query.edit_message_text(
+            f"🔄 Перевод: <code>{parsed.amount:,.0f}</code>\n"
+            f"{parsed.transfer_from} → {parsed.transfer_to}",
+            parse_mode="HTML",
+        )
+
+        context.user_data.pop("nlp_tx", None)
+        return
+
+    # ── Regular income/expense ────────────────────────────────────────
+
+    row_data, date_override = parsed.to_row()
+
+    # Apply date override
+    if date_override == "yesterday":
+        from datetime import datetime as dt
+        from datetime import timedelta
+
+        yesterday = dt.now() - timedelta(days=1)
+        row_data[0] = yesterday.strftime("%B")
+        row_data[1] = yesterday.strftime("%d.%m.%Y")
+
+    success = add_row(row_data)
+
+    if not success:
+        await query.edit_message_text(
+            "Не могу записать в таблицу. Google Sheets не отвечает."
+        )
+        context.user_data.pop("nlp_tx", None)
+        return
+
+    BudgetManager.invalidate_after_transaction()
+
+    cat_display = html.escape(parsed.category) if parsed.category else "Другое"
+    sign = "+" if parsed.type == "income" else "-"
+
+    await query.edit_message_text(
+        f"✅ Записано: <code>{sign}{parsed.amount:,.0f}</code> · {cat_display}",
+        parse_mode="HTML",
+    )
+
+    context.user_data.pop("nlp_tx", None)
 
 
 async def register_bot_commands(app):
@@ -482,6 +760,12 @@ def main():
     app.add_handler(CommandHandler("mono_day", mono_day))
     app.add_handler(CommandHandler("mono_info", mono_info))
 
+    # ── Bank accounts (manual) ──
+    app.add_handler(CommandHandler("add_bank", add_bank))
+    app.add_handler(CommandHandler("del_bank", del_bank))
+    app.add_handler(CommandHandler("set_balance", set_balance))
+    app.add_handler(CommandHandler("banks", banks_list))
+
     # ── Phase 2 — Budget ──
     app.add_handler(CommandHandler("budget", budget_command))
     app.add_handler(CommandHandler("set_limit", set_limit_command))
@@ -496,6 +780,19 @@ def main():
 
     # ── Recategorize ──
     app.add_handler(CommandHandler("recategorize", recategorize_command))
+
+    # ── Rules ──
+    app.add_handler(CommandHandler("rules", rules_command))
+    app.add_handler(CommandHandler("add_rule", add_rule_command))
+    app.add_handler(CommandHandler("delete_rule", delete_rule_command))
+
+    # ── Phase 6 — Recurring ──
+    app.add_handler(CommandHandler("recurring_add", recurring_add))
+    app.add_handler(CommandHandler("recurring_list", recurring_list))
+    app.add_handler(CommandHandler("recurring_pause", recurring_pause))
+    app.add_handler(CommandHandler("recurring_resume", recurring_resume))
+    app.add_handler(CommandHandler("recurring_delete", recurring_delete))
+    app.add_handler(CommandHandler("recurring_due", recurring_due))
 
     # ── Phase 2 — Export & Compare ──
     app.add_handler(CommandHandler("export", export_command))
@@ -512,11 +809,15 @@ def main():
     app.add_handler(
         CallbackQueryHandler(menu_callback, pattern="^(menu_|alert_toggle_)")
     )
+    app.add_handler(CallbackQueryHandler(delete_confirm_callback, pattern="^delete_"))
+    app.add_handler(CallbackQueryHandler(nlp_callback, pattern="^nlp_"))
+    app.add_handler(CallbackQueryHandler(recurring_callback, pattern="^rec_"))
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
     # Авто-регистрация команд при старте
     app.post_init = register_bot_commands
+    app.add_error_handler(error_handler)
 
     logging.info("🚀 Kesha запущен!")
     app.run_polling()

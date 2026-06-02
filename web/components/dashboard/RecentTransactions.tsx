@@ -65,7 +65,8 @@ export function RecentTransactions({
         <div className="divide-y divide-kesha-border">
           {recent.map((tx, idx) => {
             const isIncome = tx.type === "income";
-            const amount = tx.amountUah !== "" ? tx.amountUah : 0;
+            const rawAmount = tx.amountUah !== "" ? tx.amountUah : 0;
+            const displayAmount = Math.abs(rawAmount);
 
             return (
               <div
@@ -90,7 +91,7 @@ export function RecentTransactions({
                   }`}
                 >
                   {isIncome ? "+" : "-"}
-                  {formatAmountInt(amount)} ₴
+                  {formatAmountInt(displayAmount)} ₴
                 </span>
               </div>
             );

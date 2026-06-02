@@ -1,8 +1,10 @@
+import asyncio
 import html
 from datetime import datetime, timedelta
 
+from mono.client import get_all_accounts
 from responses import get_balance_response, get_month_response, get_week_response
-from sheets import COL, get_all_rows, get_balance
+from sheets import COL, get_accounts, get_all_rows, get_balance
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -58,7 +60,8 @@ def _format_cat_top(cat_expense, top=3):
 
 
 async def today(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    rows = _filter_today(get_all_rows())
+    all_rows = await asyncio.to_thread(get_all_rows)
+    rows = _filter_today(all_rows)
     income, expense, cat_expense = _summarize(rows)
     cat_block = _format_cat_top(cat_expense)
     text = (
@@ -73,7 +76,8 @@ async def today(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def week(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    rows = _filter_week(get_all_rows())
+    all_rows = await asyncio.to_thread(get_all_rows)
+    rows = _filter_week(all_rows)
     income, expense, cat_expense = _summarize(rows)
     cat_block = _format_cat_top(cat_expense)
     text = (
@@ -89,7 +93,8 @@ async def week(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def month(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    rows = _filter_month(get_all_rows())
+    all_rows = await asyncio.to_thread(get_all_rows)
+    rows = _filter_month(all_rows)
     income, expense, cat_expense = _summarize(rows)
     cat_block = _format_cat_top(cat_expense, top=5)
     text = (
@@ -105,18 +110,63 @@ async def month(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    b = get_balance()
+    b, manual_accounts = await asyncio.gather(
+        asyncio.to_thread(get_balance),
+        asyncio.to_thread(get_accounts),
+    )
     uah = b.get("UAH", 0)
     usd = b.get("USD", 0)
     eur = b.get("EUR", 0)
-    text = f"📊 <b>Общий баланс</b>\n\n"
-    parts = []
-    if uah:
-        parts.append(f"🇺🇦 {uah:+.2f} UAH")
+
+    # ── Расчётный баланс (крупно, как в веб-версии) ──
+    color = "🟢" if uah >= 0 else "🔴"
+    lines = [
+        f"💰 <b>Баланс</b>",
+        f"",
+        f"{color} <b>{uah:+,.2f} UAH</b>",
+    ]
     if usd:
-        parts.append(f"🇺🇸 {usd:+.2f} USD")
+        lines.append(f"💵 {usd:+,.2f} USD")
     if eur:
-        parts.append(f"🇪🇺 {eur:+.2f} EUR")
-    text += "\n".join(parts) if parts else "0.00 UAH"
-    text += f"\n\n<i>{get_balance_response(uah)}</i>"
-    await update.message.reply_html(text)
+        lines.append(f"💶 {eur:+,.2f} EUR")
+    lines.append(f"")
+    lines.append(f"<i>{get_balance_response(uah)}</i>")
+
+    # ── Счета Monobank + ручные ──
+    mono_accounts = await get_all_accounts()
+
+    if mono_accounts or manual_accounts:
+        lines.append(f"")
+        lines.append(f"💳 <b>Счета</b>")
+
+        if mono_accounts:
+            for acc in mono_accounts:
+                if not acc.get("masked_pan") or acc["masked_pan"] == "***":
+                    continue
+                available = acc["available"]
+                sign = "+" if available >= 0 else ""
+                pan_short = acc["masked_pan"][:4] + "..." + acc["masked_pan"][-4:]
+                lines.append(
+                    f"  • {pan_short} — {sign}{available:,.2f} {acc['currency']}"
+                )
+                if acc["credit_limit"] > 0:
+                    lines.append(
+                        f"       собств: {acc['balance']:+,.2f}  "
+                        f"кредит: {acc['credit_limit']:,.2f} {acc['currency']}"
+                    )
+
+        if manual_accounts:
+            for acc in manual_accounts:
+                if not acc.get("active", True):
+                    continue
+                if not acc.get("name"):
+                    continue
+                sign = "+" if acc["balance"] >= 0 else ""
+                # name в Accounts = PAN/идентификатор счёта
+                name = acc["name"]
+                name_short = name[:4] + "..." + name[-4:] if len(name) > 8 else name
+                lines.append(
+                    f"  • {name_short} — {sign}{acc['balance']:,.2f} {acc['currency']}"
+                )
+
+    await update.message.reply_html("\n".join(lines))

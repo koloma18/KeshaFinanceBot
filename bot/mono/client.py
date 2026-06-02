@@ -164,6 +164,51 @@ class MonobankClient:
             await asyncio.sleep(REQUEST_INTERVAL - elapsed)
 
 
+
+# ------------------------------------------------------------------
+# Convenience helpers
+# ------------------------------------------------------------------
+
+async def get_all_accounts() -> list[dict]:
+    """Fetch all Monobank accounts with balances. Returns empty list on error.
+
+    Each account dict: masked_pan, balance, credit_limit, currency,
+    available (balance - credit_limit), type, iban.
+    """
+    if not MONOBANK_X_TOKEN:
+        return []
+
+    try:
+        async with MonobankClient() as client:
+            info = await client.get_client_info()
+    except Exception:
+        return []
+
+    SKIP_MASKS = ["7016", "5443"]  # неиспользуемые счета
+
+    result = []
+    for acc in info.get("accounts", []):
+        masked = (acc.get("maskedPan", [""]) or [""])[0]
+        if not masked or masked == "***":
+            continue
+        if any(masked.replace(" ", "").endswith(m) for m in SKIP_MASKS):
+            continue
+        currency_code = acc.get("currencyCode", 980)
+        cur = currency_code_to_name(currency_code)
+        result.append({
+            "masked_pan": masked,
+            "balance": _convert_amount(acc.get("balance", 0), currency_code),
+            "credit_limit": _convert_amount(acc.get("creditLimit", 0), currency_code),
+            "currency": cur,
+            "available": _convert_amount(
+                acc.get("balance", 0) - acc.get("creditLimit", 0), currency_code
+            ),
+            "type": acc.get("type", "unknown"),
+            "iban": acc.get("iban", ""),
+        })
+
+    return result
+
 def _parse_retry_after(response: httpx.Response) -> float:
     """Extract Retry-After header as seconds, with fallback."""
     raw = response.headers.get("Retry-After", "")

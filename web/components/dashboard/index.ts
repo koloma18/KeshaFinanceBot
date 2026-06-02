@@ -4,3 +4,4 @@ export { BudgetCard } from "./BudgetCard";
 export { RatesCard } from "./RatesCard";
 export { RecentTransactions } from "./RecentTransactions";
 export { MonoAccountsCard } from "./MonoAccountsCard";
+export { AccountBalancesCard } from "./AccountBalancesCard";

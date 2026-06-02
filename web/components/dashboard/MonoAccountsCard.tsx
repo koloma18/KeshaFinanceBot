@@ -54,9 +54,14 @@ export function MonoAccountsCard() {
                 {acc.creditLimit > 0 ? ` · кредит ${formatBalance(acc.creditLimit, acc.currency)}` : ""}
               </p>
             </div>
-            <p className={`text-sm font-bold tabular-nums ${acc.balance >= 0 ? "text-kesha-income" : "text-kesha-expense"}`}>
-              {formatBalance(acc.balance, acc.currency)}
-            </p>
+            {(() => {
+              const available = acc.balance - acc.creditLimit;
+              return (
+                <p className={`text-sm font-bold tabular-nums ${available >= 0 ? "text-kesha-income" : "text-kesha-expense"}`}>
+                  {formatBalance(available, acc.currency)}
+                </p>
+              );
+            })()}
           </div>
         ))}
       </CardContent>

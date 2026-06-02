@@ -9,20 +9,21 @@ function getAmount(transaction: Transaction): {
   value: number;
   label: string;
 } {
+  // Amounts in sheet are negative for expenses — use abs for display
   if (transaction.amountUah !== "")
     return {
-      value: transaction.amountUah,
-      label: formatCurrency(transaction.amountUah, "UAH"),
+      value: Math.abs(transaction.amountUah),
+      label: formatCurrency(Math.abs(transaction.amountUah), "UAH"),
     };
   if (transaction.amountUsd !== "")
     return {
-      value: transaction.amountUsd,
-      label: formatCurrency(transaction.amountUsd, "USD"),
+      value: Math.abs(transaction.amountUsd),
+      label: formatCurrency(Math.abs(transaction.amountUsd), "USD"),
     };
   if (transaction.amountEur !== "")
     return {
-      value: transaction.amountEur,
-      label: formatCurrency(transaction.amountEur, "EUR"),
+      value: Math.abs(transaction.amountEur),
+      label: formatCurrency(Math.abs(transaction.amountEur), "EUR"),
     };
   return { value: 0, label: "—" };
 }

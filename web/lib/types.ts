@@ -8,6 +8,20 @@ export interface Transaction {
   category: string;
   comment: string;
   source: string;
+  accountId: string;
+  accountName: string;
+  transferId: string;
+}
+
+export interface AccountBalance {
+  name: string;
+  currency: string;
+  startingBalance: number;
+  income: number;
+  expense: number;
+  balance: number;
+  transactionCount: number;
+  active: boolean;
 }
 
 export interface Balance {

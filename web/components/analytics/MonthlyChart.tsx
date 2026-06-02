@@ -57,7 +57,7 @@ export function MonthlyChart({ transactions, months = 12 }: MonthlyChartProps) {
               ? tx.amountEur
               : 0;
       if (tx.type === "income") monthly[key].income += amount;
-      else monthly[key].expense += amount;
+      else if (tx.type === "expense") monthly[key].expense += Math.abs(amount);
     }
     return Object.entries(monthly)
       .sort(([a], [b]) => a.localeCompare(b))

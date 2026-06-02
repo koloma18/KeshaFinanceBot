@@ -2,8 +2,9 @@
 
 ## Current Status
 
-**Phase:** Phase 4 — Performance Optimization (SQLite Caching)
-**Last Action:** Диагностика медленного /balance, планирование кеширования
+**Phase:** Phase 5 — Performance Optimization (SQLite Caching)
+**Next Phase:** Phase 6 — Recurring Payments & Subscriptions (spec ready)
+**Last Action:** Обновлён spec Recurring payments с мультивалютной моделью
 **Blockers:** —
 
 ## Project Reference

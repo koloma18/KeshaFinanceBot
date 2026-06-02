@@ -69,7 +69,21 @@
 - Кеширование /balance, /last, /today, /week, /month
 - Web API routes тоже читают из SQLite
 
-## Phase 6: Marketing & Monetization
+## Phase 6: Recurring Payments & Subscriptions
+
+**Цель:** Автоматические напоминания о регулярных платежах и подписках с поддержкой мультивалютных списаний (USD, EUR, UAH).
+
+**Requirements:** RECUR-01, RECUR-02, RECUR-03, RECUR-04, RECUR-05
+
+**Deliverables:**
+- Лист Recurring в Google Sheets (24 колонки, три AmountMode: fixed/variable/fx)
+- Бот-команды: /recurring_add, /recurring_list, /recurring_due, /recurring_pay, /recurring_pause, /recurring_delete, /recurring_edit
+- Due flow с кнопками: запись по фиксированной сумме, ввод фактической UAH для fx, ввод суммы для variable
+- Интеграция с Transactions (A:L) — Source = recurring:<ID>, AI Comment = title + original currency
+- Apps Script: Recurring sheet + форматтер
+- Тесты: fx-подписки, fixed, variable, parser
+
+## Phase 7: Marketing & Monetization
 
 **Цель:** Название, брендинг, возможность платного доступа.
 

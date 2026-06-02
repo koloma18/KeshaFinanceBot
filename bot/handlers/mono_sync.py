@@ -9,8 +9,7 @@ from datetime import datetime, timezone
 
 from mono import build_transaction_row
 from mono.client import MonobankClient, MonobankError
-from mono.mcc_categories import get_mcc_description
-from sheets import add_row, find_row_by_source, get_last_mono_timestamp
+from sheets import add_row, get_existing_source_keys, get_last_mono_timestamp
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 MAX_STATEMENT_DAYS = 31
 CHUNK_SECONDS = MAX_STATEMENT_DAYS * 86400
 
-PRIORITY_MASKS = ["5259"]
+PRIORITY_MASKS = ["5259"]  # 4454 — офисная карта, не синхронизируем
 
 
 async def mono_sync(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -59,10 +58,12 @@ async def mono_sync(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                     break
 
         if not target_accounts:
-            await status_msg.edit_text("❌ Счета 5259 и 4454 не найдены.")
+            await status_msg.edit_text("❌ Счёт 5259 не найден.")
             return
 
         now = int(datetime.now(timezone.utc).timestamp())
+        existing_keys = get_existing_source_keys()
+
         grand_total = 0
         grand_skipped = 0
         grand_errors = 0
@@ -108,11 +109,7 @@ async def mono_sync(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                     skipped += 1
                     continue
                 source_key = f"mono:{tx['id']}"
-                try:
-                    existing = find_row_by_source(source_key)
-                except Exception:
-                    existing = None
-                if existing is not None:
+                if source_key in existing_keys:
                     skipped += 1
                     continue
                 row = build_transaction_row(tx)

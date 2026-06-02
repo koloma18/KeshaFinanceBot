@@ -8,6 +8,7 @@ import {
   RatesCard,
   RecentTransactions,
   MonoAccountsCard,
+  AccountBalancesCard,
 } from "@/components/dashboard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { BalanceSkeleton, CardSkeleton } from "@/components/ui/Skeleton";
@@ -51,10 +52,11 @@ function calcStats(
   for (const tx of transactions) {
     if (!filter(tx.date)) continue;
     const amount = tx.amountUah !== "" ? tx.amountUah : 0;
+    // Expense amounts are negative in sheet — use abs()
     if (tx.type === "income") {
       income += amount;
-    } else {
-      expense += amount;
+    } else if (tx.type === "expense") {
+      expense += Math.abs(amount);
     }
   }
   return { income, expense, total: income - expense };
@@ -308,6 +310,9 @@ export default function DashboardPage() {
 
       {/* 1.5 Monobank accounts */}
       <MonoAccountsCard />
+
+      {/* 1.6 Account balances from transactions */}
+      <AccountBalancesCard />
 
       {/* 2. Today + Week stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

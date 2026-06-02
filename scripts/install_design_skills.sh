@@ -36,7 +36,17 @@ if [ "$DRY_RUN" = true ]; then
 else
     mkdir -p "$SKILLS_DIR/visual-companion"
     curl -sL https://raw.githubusercontent.com/obra/superpowers/main/skills/brainstorming/visual-companion.md \
-        -o "$SKILLS_DIR/visual-companion/SKILL.md"
+        -o "$SKILLS_DIR/visual-companion/SKILL.tmp.md"
+    # Добавляем YAML frontmatter (в оригинале его нет)
+    cat > "$SKILLS_DIR/visual-companion/SKILL.md" <<'YAML'
+---
+name: visual-companion
+description: Browser-based visual brainstorming companion for showing mockups, diagrams, and UI options. Use when the user would understand better by seeing than reading.
+---
+
+YAML
+    cat "$SKILLS_DIR/visual-companion/SKILL.tmp.md" >> "$SKILLS_DIR/visual-companion/SKILL.md"
+    rm "$SKILLS_DIR/visual-companion/SKILL.tmp.md"
     echo "   ✅ visual-companion установлен"
 fi
 
@@ -47,12 +57,16 @@ if [ "$DRY_RUN" = true ]; then
 else
     # Пробуем npx (современный способ)
     if command -v npx &>/dev/null; then
-        npx impeccable skills install 2>/dev/null && echo "   ✅ Impeccable установлен через npx" || {
+        yes | npx impeccable skills install 2>/dev/null && echo "   ✅ Impeccable установлен через npx" || {
             echo "   ⚠️  npx impeccable не сработал, пробуем git clone..."
             TMP_DIR=$(mktemp -d)
             if git clone --depth 1 https://github.com/pbakaus/impeccable.git "$TMP_DIR" 2>/dev/null; then
-                if [ -d "$TMP_DIR/dist/agents/.agents/skills" ]; then
-                    cp -r "$TMP_DIR/dist/agents/.agents/skills/"* "$SKILLS_DIR/"
+                # Ищем SKILL.md внутри клонированного репо
+                SKILL_MD=$(find "$TMP_DIR" -name "SKILL.md" -path "*/impeccable/*" 2>/dev/null | head -1)
+                if [ -n "$SKILL_MD" ]; then
+                    SKILL_DIR=$(dirname "$SKILL_MD")
+                    mkdir -p "$SKILLS_DIR/impeccable"
+                    cp -r "$SKILL_DIR"/* "$SKILLS_DIR/impeccable/"
                     echo "   ✅ Impeccable skills скопированы из git"
                 fi
                 rm -rf "$TMP_DIR"

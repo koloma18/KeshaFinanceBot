@@ -7,6 +7,7 @@ import type {
   Balance,
   BudgetStatus,
   CategoryLimit,
+  AccountBalance,
 } from "@/lib/types";
 
 const cache = new SimpleCache(30000);
@@ -61,7 +62,7 @@ export async function GET(
           .reduce((sum, t) => sum + (t.amountUah !== "" ? t.amountUah : 0), 0);
 
         const budget = generalBudget?.limit || 0;
-        const spent = totalSpent;
+        const spent = Math.abs(totalSpent);
         const remaining = budget - spent;
         const percent = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
         const bar = _getBar(percent);
@@ -101,6 +102,17 @@ export async function GET(
         });
 
         cache.set("limits", result);
+        return NextResponse.json(result);
+      }
+
+      case "account-balances": {
+        const cached = cache.get("account-balances") as
+          | AccountBalance[]
+          | undefined;
+        if (cached) return NextResponse.json(cached);
+
+        const result = await sheetsClient.getAccountBalances();
+        cache.set("account-balances", result);
         return NextResponse.json(result);
       }
 
