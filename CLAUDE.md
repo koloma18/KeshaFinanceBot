@@ -63,6 +63,22 @@ Before answering questions, check wiki first.
 - После массовых изменений: `rm -rf web/.next && cd web && npm run dev`
 - Битый кеш вызывает "Cannot find module './NNN.js'" — не ошибка в коде
 
+### edit_file Tool — Required Parameter Schema
+- **Всегда использовать только snake_case ключи:** `old_text` / `new_text`
+- ❌ Не использовать: `old_str` / `new_str` (несуществующие ключи)
+- ❌ Не использовать: `oldText` / `newText` (camelCase — не соответствует схеме)
+- Ошибка `"data did not match any variant of untagged enum ValueOrJsonString"` означает неправильную структуру payload — проверить имена ключей в `edits[]`
+- Перед fallback на `write_file` сначала проверить: schema (ключи `old_text`/`new_text`) и needle (реально ли существует в файле)
+- `write_file` использовать только для новых файлов или когда `edit_file` объективно недоступен
+- Правильная схема вызова:
+  ```json
+  {
+    "edits": [
+      {"old_text": "...", "new_text": "..."}
+    ]
+  }
+  ```
+
 ## Architecture Decisions
 
 ### Google Sheets: Bounds-Safe Column Access
