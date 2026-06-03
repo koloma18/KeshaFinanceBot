@@ -42,6 +42,7 @@ from handlers.recurring import (
     recurring_resume,
 )
 from handlers.reminder import reminder_command
+from handlers.report import report
 from handlers.rules import add_rule_command, delete_rule_command, rules_command
 from handlers.set_currency import set_currency_command
 from handlers.settings import settings, settings_callback
@@ -798,6 +799,9 @@ def main():
     app.add_handler(CommandHandler("export", export_command))
     app.add_handler(CommandHandler("top", top_command))
     app.add_handler(CommandHandler("compare", compare_command))
+
+    # ── Phase 7 — Monthly Report ──
+    app.add_handler(CommandHandler("report", report))
 
     app.add_handler(CallbackQueryHandler(income_callback, pattern="^inc_cat_"))
     app.add_handler(CallbackQueryHandler(expense_callback, pattern="^exp_cat_"))

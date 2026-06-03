@@ -51,6 +51,7 @@ COMMANDS = [
     BotCommand("recurring_resume", "▶️ Возобновить регулярный платёж"),
     BotCommand("recurring_delete", "🗑 Удалить регулярный платёж"),
     BotCommand("recurring_due", "🔔 Платежи к оплате сегодня"),
+    BotCommand("report", "📊 Месячный отчёт"),
 ]
 
 

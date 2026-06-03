@@ -398,6 +398,13 @@ def get_categories_spending(month: str = "") -> dict[str, float]:
         row_cat = str(r[COL["CATEGORY"]] or "").strip()
         if row_type != "expense":
             continue
+        # Exclude transfers (bounds-safe — Google Sheets may trim trailing empty columns)
+        if (
+            len(r) > COL["TRANSFER_ID"]
+            and r[COL["TRANSFER_ID"]]
+            and str(r[COL["TRANSFER_ID"]]).strip()
+        ):
+            continue
         if month_name and row_month != month_name:
             continue
         try:

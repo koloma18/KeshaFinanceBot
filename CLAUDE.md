@@ -32,6 +32,13 @@ Before answering questions, check wiki first.
 
 ## Development
 
+### Phase 7: Monthly Reports ✅ Complete
+- `/report` command — full monthly report with income/expense/net, top categories,
+  budget warnings, recurring payments, spending by account, comparison with prev month
+- `/report YYYY-MM` — report for a specific month
+- Behaviour documented in `docs/phase-7-report.md`
+- Current pytest: 248 passed
+
 ### GSD Workflow
 - Следуй GSD workflow для всех изменений
 - Используй Jcodemunch для экономии токенов
@@ -57,6 +64,18 @@ Before answering questions, check wiki first.
 - Битый кеш вызывает "Cannot find module './NNN.js'" — не ошибка в коде
 
 ## Architecture Decisions
+
+### Google Sheets: Bounds-Safe Column Access
+- `valueRenderOption=UNFORMATTED_VALUE` returns serial numbers for date cells
+- Google Sheets **trims trailing empty columns** — rows may have fewer elements than the sheet
+- **Always** use `len(r) > COL[...] and r[COL[...]]` bounds check before accessing high-index columns
+  (especially `TRANSFER_ID` at index 11, `SOURCE` at 8, `ACCOUNT_NAME` at 10)
+- Date parsing: try DD.MM.YYYY string → Excel serial number → Month column fallback
+
+### Transfers Must Be Excluded from All Aggregations
+- Rows with `TRANSFER_ID` are internal transfers, NOT income or expense
+- All aggregation functions must filter: `if len(r) > COL["TRANSFER_ID"] and r[COL["TRANSFER_ID"]]: continue`
+- This applies to: `/report`, `get_categories_spending()`, BudgetManager, any future spending calc
 
 ### SQLite Read-Through Cache (Performance Layer)
 - SQLite на Fly.io volume как кеш-слой между ботом и Google Sheets
