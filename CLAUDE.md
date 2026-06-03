@@ -39,6 +39,13 @@ Before answering questions, check wiki first.
 - Behaviour documented in `docs/phase-7-report.md`
 - Current pytest: 248 passed
 
+### Phase 8: PWA Monthly Report Dashboard ✅ Complete
+- MonthlyReportCard on dashboard (between Week stats and BudgetCard)
+- Sections: income/expense/net, Kesha comment, top-5 categories, recurring, prev month comparison
+- Client-side computation (no new API routes), pure CSS progress bars, 0 new dependencies
+- Prerequisite: transfer exclusion fixed in all web aggregations (commit 28dd165)
+- Documented in `docs/phase-8-pwa-monthly-report.md`
+
 ### GSD Workflow
 - Следуй GSD workflow для всех изменений
 - Используй Jcodemunch для экономии токенов
