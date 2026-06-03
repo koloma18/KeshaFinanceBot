@@ -90,6 +90,7 @@ export class SheetsClient {
 
     for (const t of transactions) {
       if (t.type !== "income" && t.type !== "expense") continue;
+      if (t.transferId?.trim()) continue;
 
       const sign = t.type === "income" ? 1 : -1;
 
@@ -127,6 +128,7 @@ export class SheetsClient {
     for (const t of transactions) {
       if (t.type !== "expense") continue;
       if (t.month !== monthName) continue;
+      if (t.transferId?.trim()) continue;
 
       const amount = t.amountUah !== "" ? Math.abs(t.amountUah) : 0;
       spending[t.category] = (spending[t.category] || 0) + amount;
@@ -264,6 +266,11 @@ export class SheetsClient {
           .trim()
           .toLowerCase();
         if (type !== "income" && type !== "expense") continue;
+        if (
+          row.length > COL.TRANSFER_ID &&
+          String(row[COL.TRANSFER_ID] || "").trim()
+        )
+          continue;
 
         const amountUah = Number(row[COL.AMOUNT_UAH]) || 0;
 

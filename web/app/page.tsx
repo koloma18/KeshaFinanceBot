@@ -51,6 +51,7 @@ function calcStats(
   let expense = 0;
   for (const tx of transactions) {
     if (!filter(tx.date)) continue;
+    if (tx.transferId?.trim()) continue;
     const amount = tx.amountUah !== "" ? tx.amountUah : 0;
     // Expense amounts are negative in sheet — use abs()
     if (tx.type === "income") {

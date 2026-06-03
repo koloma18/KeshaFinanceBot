@@ -58,7 +58,12 @@ export async function GET(
         );
 
         const totalSpent = transactions
-          .filter((t) => t.type === "expense" && t.month === currentMonth)
+          .filter(
+            (t) =>
+              t.type === "expense" &&
+              t.month === currentMonth &&
+              !t.transferId?.trim(),
+          )
           .reduce((sum, t) => sum + (t.amountUah !== "" ? t.amountUah : 0), 0);
 
         const budget = generalBudget?.limit || 0;
