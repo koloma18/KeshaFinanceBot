@@ -2,12 +2,15 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { SkeletonCard } from "@/components/ui/Skeleton";
-import { formatAmountInt } from "@/lib/formatters";
+import { formatAmountInt, formatPercent } from "@/lib/formatters";
+import { getCategoryEmoji } from "@/lib/category-emoji";
+import type { SpendingByCategory } from "@/lib/types";
 
 interface MonthlyReportCardProps {
   monthLabel: string;
   income: number;
   expense: number;
+  categories?: SpendingByCategory[];
   loading?: boolean;
   empty?: boolean;
 }
@@ -24,6 +27,7 @@ export function MonthlyReportCard({
   monthLabel,
   income,
   expense,
+  categories,
   loading,
   empty,
 }: MonthlyReportCardProps) {
@@ -82,6 +86,33 @@ export function MonthlyReportCard({
         <p className="text-xs text-kesha-accent italic pt-1">
           🐿️ {keshaComment(net)}
         </p>
+
+        {categories && categories.length > 0 && (
+          <div className="border-t border-kesha-border pt-2 mt-2 space-y-1.5">
+            <p className="text-xs text-kesha-accent font-medium">🏆 Топ трат</p>
+            {categories.map((cat) => (
+              <div key={cat.category}>
+                <div className="flex items-center gap-1 text-xs">
+                  <span className="text-kesha-text-primary truncate flex-1 min-w-0">
+                    {getCategoryEmoji(cat.category)} {cat.category}
+                  </span>
+                  <span className="text-kesha-text-secondary shrink-0 tabular-nums">
+                    {formatAmountInt(cat.amount)} ₴
+                  </span>
+                  <span className="text-kesha-text-tertiary shrink-0 tabular-nums w-9 text-right">
+                    {formatPercent(cat.percentage)}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-kesha-border rounded-full mt-0.5 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-kesha-expense transition-all duration-500"
+                    style={{ width: `${Math.min(cat.percentage, 100)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
