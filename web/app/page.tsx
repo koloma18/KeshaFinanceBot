@@ -22,6 +22,29 @@ function parseDate(dateStr: string): Date {
   return new Date(year, month - 1, day);
 }
 
+function extractYear(dateStr: string): number {
+  const parts = dateStr.split(".");
+  return parts.length === 3 ? parseInt(parts[2], 10) : 0;
+}
+
+function getPrevMonth(): { name: string; year: number; label: string } {
+  const d = new Date();
+  const month = d.getMonth(); // 0-based
+  if (month === 0) {
+    return {
+      name: "December",
+      year: d.getFullYear() - 1,
+      label: "декабрь " + (d.getFullYear() - 1),
+    };
+  }
+  d.setMonth(month - 1);
+  return {
+    name: d.toLocaleString("en-US", { month: "long" }),
+    year: d.getFullYear(),
+    label: d.toLocaleString("ru-RU", { month: "long", year: "numeric" }),
+  };
+}
+
 function isToday(dateStr: string): boolean {
   const today = new Date();
   const d = parseDate(dateStr);
@@ -253,6 +276,28 @@ export default function DashboardPage() {
 
   const hasMonthData = monthStats.income > 0 || monthStats.expense > 0;
 
+  // ── Previous month comparison ──
+  const PREV_MONTH = getPrevMonth();
+
+  const prevMonthStats = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    for (const tx of transactions) {
+      if (tx.transferId?.trim()) continue;
+      if (tx.month !== PREV_MONTH.name) continue;
+      if (extractYear(tx.date) !== PREV_MONTH.year) continue;
+      const amount = tx.amountUah !== "" ? tx.amountUah : 0;
+      if (tx.type === "income") {
+        income += amount;
+      } else if (tx.type === "expense") {
+        expense += Math.abs(amount);
+      }
+    }
+    return { income, expense };
+  }, [transactions]);
+
+  const hasPrevMonth = prevMonthStats.income > 0 || prevMonthStats.expense > 0;
+
   // ── Error state ──
   if (error && !loading) {
     return (
@@ -405,6 +450,9 @@ export default function DashboardPage() {
         categories={monthStats.topCategories}
         recurringTotal={monthStats.recurringTotal}
         recurringItems={monthStats.recurringItems}
+        prevIncome={hasPrevMonth ? prevMonthStats.income : undefined}
+        prevExpense={hasPrevMonth ? prevMonthStats.expense : undefined}
+        prevMonthLabel={PREV_MONTH.label}
         loading={false}
         empty={!hasMonthData}
       />

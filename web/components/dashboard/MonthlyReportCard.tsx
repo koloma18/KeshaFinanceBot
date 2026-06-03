@@ -18,6 +18,9 @@ interface MonthlyReportCardProps {
   categories?: SpendingByCategory[];
   recurringTotal?: number;
   recurringItems?: RecurringItem[];
+  prevIncome?: number;
+  prevExpense?: number;
+  prevMonthLabel?: string;
   loading?: boolean;
   empty?: boolean;
 }
@@ -30,6 +33,18 @@ function keshaComment(net: number): string {
   return "Кеша в шоке от таких трат.";
 }
 
+function deltaColor(delta: number, invert: boolean): string {
+  if (delta > 0) return invert ? "text-kesha-expense" : "text-kesha-income";
+  if (delta < 0) return invert ? "text-kesha-income" : "text-kesha-expense";
+  return "text-kesha-text-secondary";
+}
+
+function deltaSign(delta: number): string {
+  if (delta > 0) return "+";
+  if (delta < 0) return "-";
+  return "";
+}
+
 export function MonthlyReportCard({
   monthLabel,
   income,
@@ -37,6 +52,9 @@ export function MonthlyReportCard({
   categories,
   recurringTotal,
   recurringItems,
+  prevIncome,
+  prevExpense,
+  prevMonthLabel,
   loading,
   empty,
 }: MonthlyReportCardProps) {
@@ -63,6 +81,11 @@ export function MonthlyReportCard({
   const recPct =
     expense > 0 && recurringTotal ? (recurringTotal / expense) * 100 : 0;
   const hasRecurring = recurringItems && recurringItems.length > 0;
+
+  const hasPrev = prevIncome !== undefined && prevExpense !== undefined;
+  const incomeDelta = hasPrev ? income - prevIncome! : 0;
+  const expenseDelta = hasPrev ? expense - prevExpense! : 0;
+  const netDelta = hasPrev ? net - (prevIncome! - prevExpense!) : 0;
 
   return (
     <Card>
@@ -144,6 +167,47 @@ export function MonthlyReportCard({
             ))}
           </div>
         )}
+
+        <div className="border-t border-kesha-border pt-2 mt-2 space-y-1">
+          <p className="text-xs text-kesha-accent font-medium">
+            📉 vs {prevMonthLabel || "прошлый месяц"}
+          </p>
+          {hasPrev ? (
+            <>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-kesha-text-secondary">Доходы</span>
+                <span
+                  className={`font-semibold tabular-nums ${deltaColor(incomeDelta, false)}`}
+                >
+                  {deltaSign(incomeDelta)}
+                  {formatAmountInt(Math.abs(incomeDelta))} ₴
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-kesha-text-secondary">Расходы</span>
+                <span
+                  className={`font-semibold tabular-nums ${deltaColor(expenseDelta, true)}`}
+                >
+                  {deltaSign(expenseDelta)}
+                  {formatAmountInt(Math.abs(expenseDelta))} ₴
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-kesha-text-secondary">Итог</span>
+                <span
+                  className={`font-semibold tabular-nums ${deltaColor(netDelta, false)}`}
+                >
+                  {deltaSign(netDelta)}
+                  {formatAmountInt(Math.abs(netDelta))} ₴
+                </span>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-kesha-text-secondary">
+              Нет данных за прошлый месяц
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
