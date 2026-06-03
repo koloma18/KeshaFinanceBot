@@ -6,11 +6,18 @@ import { formatAmountInt, formatPercent } from "@/lib/formatters";
 import { getCategoryEmoji } from "@/lib/category-emoji";
 import type { SpendingByCategory } from "@/lib/types";
 
+interface RecurringItem {
+  title: string;
+  amount: number;
+}
+
 interface MonthlyReportCardProps {
   monthLabel: string;
   income: number;
   expense: number;
   categories?: SpendingByCategory[];
+  recurringTotal?: number;
+  recurringItems?: RecurringItem[];
   loading?: boolean;
   empty?: boolean;
 }
@@ -28,6 +35,8 @@ export function MonthlyReportCard({
   income,
   expense,
   categories,
+  recurringTotal,
+  recurringItems,
   loading,
   empty,
 }: MonthlyReportCardProps) {
@@ -51,6 +60,9 @@ export function MonthlyReportCard({
   }
 
   const net = income - expense;
+  const recPct =
+    expense > 0 && recurringTotal ? (recurringTotal / expense) * 100 : 0;
+  const hasRecurring = recurringItems && recurringItems.length > 0;
 
   return (
     <Card>
@@ -109,6 +121,25 @@ export function MonthlyReportCard({
                     style={{ width: `${Math.min(cat.percentage, 100)}%` }}
                   />
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {hasRecurring && (
+          <div className="border-t border-kesha-border pt-2 mt-2 space-y-1">
+            <p className="text-xs text-kesha-accent font-medium">
+              🔁 Регулярные · {formatAmountInt(recurringTotal!)} ₴
+              {recPct > 0 && ` · ${formatPercent(recPct)} расходов`}
+            </p>
+            {recurringItems!.map((item) => (
+              <div key={item.title} className="flex justify-between text-xs">
+                <span className="text-kesha-text-secondary truncate flex-1 min-w-0 mr-2">
+                  • {item.title}
+                </span>
+                <span className="text-kesha-text-secondary shrink-0 tabular-nums">
+                  {formatAmountInt(item.amount)} ₴
+                </span>
               </div>
             ))}
           </div>

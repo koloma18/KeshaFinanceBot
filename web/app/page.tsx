@@ -203,6 +203,7 @@ export default function DashboardPage() {
     let income = 0;
     let expense = 0;
     const catMap = new Map<string, number>();
+    const recMap = new Map<string, number>();
     for (const tx of transactions) {
       if (tx.month !== CURRENT_MONTH_NAME) continue;
       if (tx.transferId?.trim()) continue;
@@ -215,6 +216,12 @@ export default function DashboardPage() {
         if (absAmount > 0) {
           const cat = tx.category?.trim() || "Другое";
           catMap.set(cat, (catMap.get(cat) ?? 0) + absAmount);
+          const source = tx.source?.trim() ?? "";
+          if (source.startsWith("recurring:")) {
+            const title =
+              tx.comment?.trim() || tx.category?.trim() || "Регулярный платёж";
+            recMap.set(title, (recMap.get(title) ?? 0) + absAmount);
+          }
         }
       }
     }
@@ -227,7 +234,21 @@ export default function DashboardPage() {
         percentage: expense > 0 ? (amount / expense) * 100 : 0,
         currency: "UAH" as const,
       }));
-    return { income, expense, topCategories };
+    const recurringTotal = Array.from(recMap.values()).reduce(
+      (s, v) => s + v,
+      0,
+    );
+    const recurringItems = Array.from(recMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([title, amount]) => ({ title, amount }));
+    return {
+      income,
+      expense,
+      topCategories,
+      recurringTotal,
+      recurringItems,
+    };
   }, [transactions]);
 
   const hasMonthData = monthStats.income > 0 || monthStats.expense > 0;
@@ -382,6 +403,8 @@ export default function DashboardPage() {
         income={monthStats.income}
         expense={monthStats.expense}
         categories={monthStats.topCategories}
+        recurringTotal={monthStats.recurringTotal}
+        recurringItems={monthStats.recurringItems}
         loading={false}
         empty={!hasMonthData}
       />
