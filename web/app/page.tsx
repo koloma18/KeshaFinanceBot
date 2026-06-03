@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   BalanceCard,
   DailyStatsCard,
+  MonthlyReportCard,
   BudgetCard,
   RatesCard,
   RecentTransactions,
@@ -189,6 +190,33 @@ export default function DashboardPage() {
     fetchData(false);
   }, [fetchData]);
 
+  // ── Monthly stats (useMemo BEFORE conditional returns) ──
+  const CURRENT_MONTH_NAME = new Date().toLocaleString("en-US", {
+    month: "long",
+  });
+  const CURRENT_MONTH_LABEL = new Date().toLocaleString("ru-RU", {
+    month: "long",
+    year: "numeric",
+  });
+
+  const monthStats = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    for (const tx of transactions) {
+      if (tx.month !== CURRENT_MONTH_NAME) continue;
+      if (tx.transferId?.trim()) continue;
+      const amount = tx.amountUah !== "" ? tx.amountUah : 0;
+      if (tx.type === "income") {
+        income += amount;
+      } else if (tx.type === "expense") {
+        expense += Math.abs(amount);
+      }
+    }
+    return { income, expense };
+  }, [transactions]);
+
+  const hasMonthData = monthStats.income > 0 || monthStats.expense > 0;
+
   // ── Error state ──
   if (error && !loading) {
     return (
@@ -332,6 +360,15 @@ export default function DashboardPage() {
           loading={false}
         />
       </div>
+
+      {/* 2.5 Monthly report */}
+      <MonthlyReportCard
+        monthLabel={CURRENT_MONTH_LABEL}
+        income={monthStats.income}
+        expense={monthStats.expense}
+        loading={false}
+        empty={!hasMonthData}
+      />
 
       {/* 3. Budget */}
       <BudgetCard budget={budget} loading={false} />
